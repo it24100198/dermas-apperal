@@ -1,0 +1,67 @@
+{
+  "info": { "name": "Manufacturing ERP", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:5000/api" }, { "key": "token", "value": "" }],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@demo.com\",\n  \"password\": \"admin123\"\n}" },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        { "name": "Me", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/auth/me" } }
+      ]
+    },
+    {
+      "name": "Manufacturing",
+      "item": [
+        { "name": "Overview", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/manufacturing/overview" } },
+        { "name": "Cutting list", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/manufacturing/cutting" } },
+        { "name": "Save cutting", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"fabricUsedQty\": 90,\n  \"fabricWasteQty\": 10,\n  \"totalCutPieces\": 95,\n  \"cuttingRejectQty\": 5\n}" }, "url": "{{baseUrl}}/manufacturing/cutting/:jobId" } },
+        { "name": "Washing view", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/manufacturing/washing" } },
+        { "name": "Create transfer", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"jobId\": null,\n  \"quantitySent\": 50,\n  \"sentFrom\": \"Line 01\"\n}" }, "url": "{{baseUrl}}/manufacturing/washing/transfers" } },
+        { "name": "QC list", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/manufacturing/qc" } },
+        { "name": "Final list", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/manufacturing/final" } }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        { "name": "List jobs", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/jobs" } },
+        { "name": "Get job", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/jobs/:jobId" } },
+        { "name": "Create job", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"materialId\": \"<materialId>\",\n  \"issuedFabricQuantity\": 100,\n  \"styleRef\": \"STYLE-A\",\n  \"batchRef\": \"BATCH-001\"\n}" }, "url": "{{baseUrl}}/jobs" } },
+        { "name": "Send to cutting", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/jobs/:jobId/send-to-cutting" } },
+        { "name": "Assign lines meta", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/jobs/:jobId/assign-lines/meta" } },
+        { "name": "Assign lines", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"productId\": \"<productId>\",\n  \"assignments\": [\n    { \"lineName\": \"Line 01\", \"assignedQuantity\": 50 },\n    { \"lineName\": \"Line 02\", \"assignedQuantity\": 45 }\n  ]\n}" }, "url": "{{baseUrl}}/jobs/:jobId/assign-lines" } }
+      ]
+    },
+    {
+      "name": "Production",
+      "item": [
+        { "name": "Hourly list", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/production/hourly" } },
+        { "name": "Save hourly", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"jobId\": \"<jobId>\",\n  \"rows\": [\n    { \"lineName\": \"Line 01\", \"productionDate\": \"2025-03-04\", \"hour\": 10, \"employeeId\": \"<employeeId>\", \"quantity\": 20 }\n  ]\n}" }, "url": "{{baseUrl}}/production/hourly" } }
+      ]
+    },
+    {
+      "name": "Supervisor",
+      "item": [
+        { "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/supervisor/dashboard" } },
+        { "name": "Complete line", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/supervisor/lines/:jobId/complete" } }
+      ]
+    },
+    {
+      "name": "Meta",
+      "item": [
+        { "name": "Materials", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/meta/materials" } },
+        { "name": "Products", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/meta/products" } },
+        { "name": "Employees", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/meta/employees" } },
+        { "name": "Sections", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/meta/sections?type=line" } }
+      ]
+    }
+  ]
+}
