@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getWashing,
@@ -21,7 +20,6 @@ export default function Washing() {
   const [tab, setTab] = useState('incomingPending');
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ jobId: '', quantitySent: '', sentFrom: '' });
-  const [createError, setCreateError] = useState('');
   const queryClient = useQueryClient();
 
   const { data: washingData, isLoading } = useQuery({
@@ -30,8 +28,7 @@ export default function Washing() {
   });
   const { data: jobsList } = useQuery({
     queryKey: ['jobs-list'],
-    queryFn: () =>
-      listJobs({ includeAvailableToSend: true, washingEligibleOnly: true }).then((r) => r.data),
+    queryFn: () => listJobs().then((r) => r.data),
   });
 
   const createMutation = useMutation({
@@ -41,9 +38,7 @@ export default function Washing() {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowCreate(false);
       setCreateForm({ jobId: '', quantitySent: '', sentFrom: '' });
-      setCreateError('');
     },
-    onError: (err) => setCreateError(err.response?.data?.error || err.message),
   });
   const receiveMutation = useMutation({
     mutationFn: (id) => receiveWashingTransfer(id),
@@ -56,25 +51,12 @@ export default function Washing() {
 
   const transfers = washingData?.[tab] || [];
   const isWashingSupervisor = true; // TODO: from auth/employee role
-  const selectableJobs = jobsList || [];
-  const selectedJob = selectableJobs.find((j) => j._id === createForm.jobId);
-  const maxQty = selectedJob ? Number(selectedJob.availableToSend || 0) : Number.MAX_SAFE_INTEGER;
 
   const handleCreate = (e) => {
     e.preventDefault();
-    setCreateError('');
-    const qty = Number(createForm.quantitySent);
-    if (!qty || qty <= 0) {
-      setCreateError('Quantity must be greater than 0');
-      return;
-    }
-    if (selectedJob && qty > maxQty) {
-      setCreateError(`Cannot send more than available quantity (${maxQty})`);
-      return;
-    }
     createMutation.mutate({
       jobId: createForm.jobId || undefined,
-      quantitySent: qty,
+      quantitySent: Number(createForm.quantitySent),
       sentFrom: createForm.sentFrom || undefined,
     });
   };
@@ -99,41 +81,22 @@ export default function Washing() {
                 <label className="block text-sm text-slate-600 mb-1">Job (optional)</label>
                 <select
                   value={createForm.jobId}
-                  onChange={(e) => {
-                    setCreateForm((f) => ({ ...f, jobId: e.target.value, quantitySent: '' }));
-                    setCreateError('');
-                  }}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, jobId: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">— Standalone —</option>
-                  {selectableJobs.map((j) => (
-                    <option key={j._id} value={j._id}>
-                      {j.jobNumber} (available: {Number(j.availableToSend || 0)})
-                    </option>
+                  {(jobsList || []).map((j) => (
+                    <option key={j._id} value={j._id}>{j.jobNumber}</option>
                   ))}
                 </select>
-                {createForm.jobId && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Max transferable now: <strong>{maxQty}</strong>
-                  </p>
-                )}
-                {!createForm.jobId && selectableJobs.length === 0 && (
-                  <p className="text-xs text-amber-700 mt-1">
-                    No washing-eligible jobs found now.
-                  </p>
-                )}
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Quantity sent *</label>
                 <input
                   type="number"
                   min="1"
-                  max={selectedJob ? maxQty : undefined}
                   value={createForm.quantitySent}
-                  onChange={(e) => {
-                    setCreateForm((f) => ({ ...f, quantitySent: e.target.value }));
-                    setCreateError('');
-                  }}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, quantitySent: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
@@ -156,10 +119,8 @@ export default function Washing() {
                 </button>
               </div>
             </form>
-            {(createError || createMutation.isError) && (
-              <p className="mt-2 text-red-600 text-sm">
-                {createError || createMutation.error?.response?.data?.error}
-              </p>
+            {createMutation.isError && (
+              <p className="mt-2 text-red-600 text-sm">{createMutation.error.response?.data?.error}</p>
             )}
           </div>
         </div>
@@ -181,15 +142,6 @@ export default function Washing() {
         <p className="text-slate-500">Loading...</p>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          {(receiveMutation.isError || completeMutation.isError) && (
-            <div className="px-4 py-3 border-b border-red-100 bg-red-50 text-red-700 text-sm">
-              {receiveMutation.error?.response?.data?.error ||
-                completeMutation.error?.response?.data?.error ||
-                receiveMutation.error?.message ||
-                completeMutation.error?.message ||
-                'Action failed'}
-            </div>
-          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 text-slate-600 text-left">
@@ -225,14 +177,6 @@ export default function Washing() {
                       >
                         Complete washing
                       </button>
-                    )}
-                    {t.status === 'washing_completed' && t.jobId?._id && (
-                      <Link
-                        to={`/manufacturing/qc/${t._id}`}
-                        className="text-amber-700 hover:underline"
-                      >
-                        Go to QC
-                      </Link>
                     )}
                   </td>
                 </tr>

@@ -9,7 +9,6 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/hourly', productionController.listHourly);
-router.get('/hourly/:jobId', productionController.getHourlyRecords);
 router.post('/hourly', validate(hourlyProductionSchema), productionController.saveHourly);
 
 export default router;

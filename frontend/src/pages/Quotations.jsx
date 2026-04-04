@@ -7,6 +7,19 @@ const STATUS_COLORS = {
   converted: 'bg-purple-100 text-purple-700',
 };
 
+const PRODUCTS = [
+  "Men's Slim Fit Jeans",
+  "Men's Regular Fit Jeans",
+  "Women's Jeans",
+  "Men's T-Shirt",
+  "Women's T-Shirt",
+  "Men's Polo Shirt",
+  "Men's Jacket",
+  "Women's Jacket",
+  "Shorts",
+  "Trousers",
+];
+
 const emptyForm = {
   customer: { name: '', email: '', phone: '', address: '' },
   items: [{ description: '', qty: 1, unitPrice: 0, totalPrice: 0 }],
@@ -20,7 +33,7 @@ const printQuote = (q) => {
     </head><body>
     <div class="header"><div><h2>QUOTATION</h2><p><strong>${q.quoteNumber}</strong></p></div><div style="text-align:right"><p><strong>To:</strong> ${q.customer.name}</p><p>${q.customer.email||''}</p><p>${q.customer.phone||''}</p></div></div>
     <p><strong>Valid Until:</strong> ${new Date(q.validUntil).toLocaleDateString('en-GB')} &nbsp; <strong>Status:</strong> ${q.status}</p>
-    <table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>
+    <table><thead><tr><th>#</th><th>Product Name</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>
     ${q.items.map((it,i)=>`<tr><td>${i+1}</td><td>${it.description}</td><td>${it.qty}</td><td>Rs. ${it.unitPrice?.toLocaleString()}</td><td>Rs. ${it.totalPrice?.toLocaleString()}</td></tr>`).join('')}
     </tbody></table>
     <div style="text-align:right;margin-top:16px"><p>Subtotal: Rs. ${q.subtotal?.toLocaleString()}</p><p>Tax (${q.taxRate}%): Rs. ${q.taxAmount?.toLocaleString()}</p><h3>Total: Rs. ${q.totalAmount?.toLocaleString()}</h3></div>
@@ -176,14 +189,30 @@ export default function Quotations() {
                   </div>
                 ))}
               </div>
+
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Items</p>
+
+              {/* Column Headers */}
+              <div className="grid grid-cols-12 gap-2 text-xs text-slate-400 font-medium px-1">
+                <span className="col-span-5">Product Name</span>
+                <span className="col-span-2">Qty</span>
+                <span className="col-span-3">Unit Price (Rs.)</span>
+                <span className="col-span-1"></span>
+                <span className="col-span-1">Total</span>
+              </div>
+
               {form.items.map((it, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                  <input value={it.description} onChange={e => updateItem(i,'description',e.target.value)} placeholder="Description"
-                    className="col-span-5 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                  <input type="number" min="1" value={it.qty} onChange={e => updateItem(i,'qty',e.target.value)} placeholder="Qty"
+                  <select value={it.description} onChange={e => updateItem(i,'description',e.target.value)}
+                    className="col-span-5 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+                    <option value="">-- Select Product --</option>
+                    {PRODUCTS.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <input type="number" min="1" value={it.qty} onChange={e => updateItem(i,'qty',e.target.value)}
                     className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                  <input type="number" min="0" value={it.unitPrice} onChange={e => updateItem(i,'unitPrice',e.target.value)} placeholder="Unit Price"
+                  <input type="number" min="0" value={it.unitPrice} onChange={e => updateItem(i,'unitPrice',e.target.value)}
                     className="col-span-3 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
                   <button onClick={() => setForm(f => ({ ...f, items: f.items.filter((_,idx) => idx!==i) }))}
                     className="col-span-1 text-slate-400 hover:text-red-500 flex justify-center text-sm"><i className="bi bi-trash" /></button>

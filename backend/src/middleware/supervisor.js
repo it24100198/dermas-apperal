@@ -7,30 +7,13 @@ import { ProductionSection } from '../models/index.js';
 export async function requireWashingSupervisor(req, res, next) {
   const employee = await Employee.findOne({ userId: req.user._id }).populate('productionSectionId');
   if (!employee) return res.status(403).json({ error: 'Employee record not found' });
-
-  // Main admin can always operate washing actions.
-  if (req.user?.role === 'admin' || employee.role === 'admin') {
-    req.employee = employee;
-    return next();
+  if (employee.role !== 'washing_supervisor') {
+    return res.status(403).json({ error: 'Only washing supervisor can perform this action' });
   }
-
-  // Allow any supervisor role (washing/line/cutting) to perform washing actions.
-  const isAnySupervisor =
-    req.user?.role === 'supervisor' ||
-    ['washing_supervisor', 'line_supervisor', 'cutting_supervisor'].includes(employee.role);
-
-  if (!isAnySupervisor) {
-    return res.status(403).json({ error: 'Only admin or supervisor can perform this action' });
+  const section = await ProductionSection.findOne({ slug: 'washing', isActive: true });
+  if (!section || !section._id.equals(employee.productionSectionId?._id)) {
+    return res.status(403).json({ error: 'Not assigned to washing section' });
   }
-
-  // Keep section check only for washing_supervisor role.
-  if (employee.role === 'washing_supervisor') {
-    const section = await ProductionSection.findOne({ slug: 'washing', isActive: true });
-    if (!section || !section._id.equals(employee.productionSectionId?._id)) {
-      return res.status(403).json({ error: 'Not assigned to washing section' });
-    }
-  }
-
   req.employee = employee;
   next();
 }

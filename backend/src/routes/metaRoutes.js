@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Material, Product, Employee, ProductionSection, User } from '../models/index.js';
+import { Material, Product, Employee, ProductionSection } from '../models/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -10,50 +10,6 @@ router.get('/materials', async (req, res, next) => {
   try {
     const materials = await Material.find().sort({ name: 1 }).lean();
     res.json(materials);
-  } catch (err) {
-    next(err);
-  }
-});
-
-const MATERIAL_TYPES = ['fabric', 'accessory', 'etc'];
-
-router.post('/materials', async (req, res, next) => {
-  try {
-    const { name, type = 'fabric', stockQty = 0, unit = 'm', unitPrice = 0 } = req.body || {};
-    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
-    if (!MATERIAL_TYPES.includes(type)) {
-      return res.status(400).json({ error: `type must be one of: ${MATERIAL_TYPES.join(', ')}` });
-    }
-    const doc = await Material.create({
-      name: name.trim(),
-      type,
-      stockQty: Math.max(0, Number(stockQty) || 0),
-      unit: String(unit).trim() || 'm',
-      unitPrice: Math.max(0, Number(unitPrice) || 0),
-    });
-    res.status(201).json(doc.toObject());
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.put('/materials/:id', async (req, res, next) => {
-  try {
-    const m = await Material.findById(req.params.id);
-    if (!m) return res.status(404).json({ error: 'Material not found' });
-    const { name, type, stockQty, unit, unitPrice } = req.body || {};
-    if (name != null) m.name = String(name).trim();
-    if (type != null) {
-      if (!MATERIAL_TYPES.includes(type)) {
-        return res.status(400).json({ error: `type must be one of: ${MATERIAL_TYPES.join(', ')}` });
-      }
-      m.type = type;
-    }
-    if (stockQty != null) m.stockQty = Math.max(0, Number(stockQty) || 0);
-    if (unit != null) m.unit = String(unit).trim() || m.unit;
-    if (unitPrice != null) m.unitPrice = Math.max(0, Number(unitPrice) || 0);
-    await m.save();
-    res.json(m.toObject());
   } catch (err) {
     next(err);
   }
@@ -70,132 +26,8 @@ router.get('/products', async (req, res, next) => {
 
 router.get('/employees', async (req, res, next) => {
   try {
-    const employees = await Employee.find()
-      .populate('productionSectionId', 'name slug')
-      .populate('userId', 'email name role isActive')
-      .sort({ name: 1 })
-      .lean();
+    const employees = await Employee.find().populate('productionSectionId', 'name slug').sort({ name: 1 }).lean();
     res.json(employees);
-  } catch (err) {
-    next(err);
-  }
-});
-
-const mapEmployeeRoleToUserRole = (employeeRole) => {
-  if (employeeRole === 'admin') return 'admin';
-  if (
-    employeeRole === 'line_supervisor' ||
-    employeeRole === 'washing_supervisor' ||
-    employeeRole === 'cutting_supervisor'
-  ) return 'supervisor';
-  return 'user';
-};
-
-router.post('/employees', async (req, res, next) => {
-  try {
-    const {
-      name,
-      email,
-      password,
-      role = 'operator',
-      phone = '',
-      productionSectionId = null,
-      isActive = true,
-    } = req.body || {};
-
-    if (!name?.trim() || !email?.trim() || !password?.trim()) {
-      return res.status(400).json({ error: 'Name, email and password are required' });
-    }
-
-    const exists = await User.findOne({ email: email.trim().toLowerCase() }).lean();
-    if (exists) return res.status(400).json({ error: 'Email already exists' });
-
-    const user = await User.create({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password: password.trim(),
-      role: mapEmployeeRoleToUserRole(role),
-      isActive: Boolean(isActive),
-    });
-
-    const employee = await Employee.create({
-      userId: user._id,
-      productionSectionId: productionSectionId || null,
-      role,
-      name: name.trim(),
-      phone: phone?.trim() || '',
-    });
-
-    const populated = await Employee.findById(employee._id)
-      .populate('productionSectionId', 'name slug')
-      .populate('userId', 'email name role isActive')
-      .lean();
-    res.status(201).json(populated);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.put('/employees/:id', async (req, res, next) => {
-  try {
-    const employee = await Employee.findById(req.params.id);
-    if (!employee) return res.status(404).json({ error: 'Employee not found' });
-
-    const user = await User.findById(employee.userId).select('+password');
-    if (!user) return res.status(404).json({ error: 'Linked user not found' });
-
-    const {
-      name,
-      email,
-      password,
-      role,
-      phone,
-      productionSectionId,
-      isActive,
-    } = req.body || {};
-
-    if (name != null) {
-      user.name = String(name).trim();
-      employee.name = String(name).trim();
-    }
-    if (email != null) {
-      const normalized = String(email).trim().toLowerCase();
-      const conflict = await User.findOne({ email: normalized, _id: { $ne: user._id } }).lean();
-      if (conflict) return res.status(400).json({ error: 'Email already exists' });
-      user.email = normalized;
-    }
-    if (password != null && String(password).trim()) {
-      user.password = String(password).trim();
-    }
-    if (role != null) {
-      employee.role = role;
-      user.role = mapEmployeeRoleToUserRole(role);
-    }
-    if (phone != null) employee.phone = String(phone).trim();
-    if (productionSectionId !== undefined) employee.productionSectionId = productionSectionId || null;
-    if (isActive !== undefined) user.isActive = Boolean(isActive);
-
-    await user.save();
-    await employee.save();
-
-    const populated = await Employee.findById(employee._id)
-      .populate('productionSectionId', 'name slug')
-      .populate('userId', 'email name role isActive')
-      .lean();
-    res.json(populated);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.delete('/employees/:id', async (req, res, next) => {
-  try {
-    const employee = await Employee.findById(req.params.id);
-    if (!employee) return res.status(404).json({ error: 'Employee not found' });
-
-    await User.findByIdAndDelete(employee.userId);
-    await Employee.findByIdAndDelete(employee._id);
-    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
@@ -205,92 +37,8 @@ router.get('/sections', async (req, res, next) => {
   try {
     const type = req.query.type;
     const query = type ? { type, isActive: true } : { isActive: true };
-    const sections = await ProductionSection.find(query)
-      .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
-      .sort({ name: 1 })
-      .lean();
+    const sections = await ProductionSection.find(query).sort({ name: 1 }).lean();
     res.json(sections);
-  } catch (err) {
-    next(err);
-  }
-});
-
-function inferSupervisorRoleForSection(section) {
-  const slug = (section.slug || '').toLowerCase();
-  if (slug === 'washing') return 'washing_supervisor';
-  if (slug === 'cutting') return 'cutting_supervisor';
-  if (section.type === 'line') return 'line_supervisor';
-  return 'line_supervisor';
-}
-
-/**
- * Assign one supervisor per section. Updates Employee.productionSectionId + role and User.role.
- * Pass supervisorEmployeeId: null to clear supervisor.
- */
-router.put('/sections/:id', async (req, res, next) => {
-  try {
-    const section = await ProductionSection.findById(req.params.id);
-    if (!section) return res.status(404).json({ error: 'Section not found' });
-
-    const { supervisorEmployeeId } = req.body || {};
-    if (supervisorEmployeeId === undefined) {
-      return res.status(400).json({ error: 'supervisorEmployeeId is required (use null to clear)' });
-    }
-
-    const prevSupervisorId = section.supervisorEmployeeId;
-
-    // Demote previous supervisor if different
-    if (prevSupervisorId && String(prevSupervisorId) !== String(supervisorEmployeeId || '')) {
-      const prevEmp = await Employee.findById(prevSupervisorId);
-      if (prevEmp && prevEmp.productionSectionId?.equals(section._id)) {
-        prevEmp.role = 'operator';
-        await prevEmp.save();
-        const prevUser = await User.findById(prevEmp.userId);
-        if (prevUser) {
-          prevUser.role = 'user';
-          await prevUser.save();
-        }
-      }
-    }
-
-    if (!supervisorEmployeeId) {
-      section.supervisorEmployeeId = null;
-      await section.save();
-      const updated = await ProductionSection.findById(section._id)
-        .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
-        .lean();
-      return res.json(updated);
-    }
-
-    const newEmp = await Employee.findById(supervisorEmployeeId);
-    if (!newEmp) return res.status(404).json({ error: 'Employee not found' });
-
-    if (newEmp.productionSectionId && !newEmp.productionSectionId.equals(section._id)) {
-      const oldSec = await ProductionSection.findById(newEmp.productionSectionId);
-      if (oldSec?.supervisorEmployeeId?.equals(newEmp._id)) {
-        oldSec.supervisorEmployeeId = null;
-        await oldSec.save();
-      }
-    }
-
-    const empRole = inferSupervisorRoleForSection(section);
-    newEmp.productionSectionId = section._id;
-    newEmp.role = empRole;
-    await newEmp.save();
-
-    const u = await User.findById(newEmp.userId);
-    if (u) {
-      u.role = mapEmployeeRoleToUserRole(empRole);
-      await u.save();
-    }
-
-    section.supervisorEmployeeId = newEmp._id;
-    await section.save();
-
-    const updated = await ProductionSection.findById(section._id)
-      .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
-      .lean();
-    res.json(updated);
   } catch (err) {
     next(err);
   }

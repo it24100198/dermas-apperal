@@ -6,9 +6,22 @@ const STATUS_COLORS = {
   rejected:'bg-red-100 text-red-700', completed:'bg-emerald-100 text-emerald-700',
 };
 
+const PRODUCTS = [
+  "Men's Slim Fit Jeans",
+  "Men's Regular Fit Jeans",
+  "Women's Jeans",
+  "Men's T-Shirt",
+  "Women's T-Shirt",
+  "Men's Polo Shirt",
+  "Men's Jacket",
+  "Women's Jacket",
+  "Shorts",
+  "Trousers",
+];
+
 const emptyForm = {
   salesOrder: '', customer: { name:'', phone:'' },
-  items: [{ description:'', qty:1, reason:'', condition:'sellable', material:'' }],
+  items: [{ description:'', qty:1, reason:'' }],
   refundType: 'credit_note', notes: '',
 };
 
@@ -20,7 +33,7 @@ export default function SalesReturns() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [actionModal, setActionModal] = useState(null); // { rma, type }
+  const [actionModal, setActionModal] = useState(null);
   const [approver, setApprover] = useState('');
 
   const load = async () => {
@@ -43,6 +56,7 @@ export default function SalesReturns() {
   const handleSave = async () => {
     if(!form.salesOrder){setError('Select a Sales Order');return;}
     if(!form.customer.name.trim()){setError('Customer name required');return;}
+    if(form.items.some(it=>!it.description)){setError('Please select a product for all items');return;}
     setSaving(true);
     try{await createSalesReturn(form);setShowModal(false);await load();}
     catch(e){setError(e?.response?.data?.error||'Failed');}
@@ -80,7 +94,7 @@ export default function SalesReturns() {
         ))}
       </div>
 
-      {loading?<div className="p-12 text-center text-slate-400">Loading…</div>
+      {loading?<div className="p-12 text-center text-slate-400">Loading...</div>
         :returns.length===0?<div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400"><i className="bi bi-arrow-return-left text-5xl block mb-3 opacity-20"/>No returns recorded yet.</div>
         :(
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -99,7 +113,6 @@ export default function SalesReturns() {
                         {r.items.map((it,i)=>(
                           <div key={i} className="text-xs text-slate-600">
                             <span className="font-medium">{it.qty}x</span> {it.description}
-                            <span className={`ml-1 px-1.5 py-0.5 rounded text-xs ${it.condition==='sellable'?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}`}>{it.condition}</span>
                           </div>
                         ))}
                       </div>
@@ -138,7 +151,7 @@ export default function SalesReturns() {
               {error&&<p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
               <div><label className="block text-xs font-medium text-slate-700 mb-1">Sales Order *</label>
                 <select value={form.salesOrder} onChange={e=>handleSOSelect(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="">Select order…</option>
+                  <option value="">Select order...</option>
                   {salesOrders.map(o=><option key={o._id} value={o._id}>{o.orderNumber} — {o.customer.name}</option>)}
                 </select></div>
               <div className="grid grid-cols-2 gap-3">
@@ -151,19 +164,23 @@ export default function SalesReturns() {
               {form.items.map((it,i)=>(
                 <div key={i} className="space-y-2 bg-slate-50 rounded-xl p-3">
                   <div className="grid grid-cols-3 gap-2">
-                    <input value={it.description} onChange={e=>updateItem(i,'description',e.target.value)} placeholder="Item description" className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                    <input type="number" min="1" value={it.qty} onChange={e=>updateItem(i,'qty',e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input value={it.reason} onChange={e=>updateItem(i,'reason',e.target.value)} placeholder="Reason for return" className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                    <select value={it.condition} onChange={e=>updateItem(i,'condition',e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                      <option value="sellable">Sellable</option><option value="damaged">Damaged</option>
+                    <select value={it.description} onChange={e=>updateItem(i,'description',e.target.value)}
+                      className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                      <option value="">-- Select Product --</option>
+                      {PRODUCTS.map(p=>(
+                        <option key={p} value={p}>{p}</option>
+                      ))}
                     </select>
+                    <input type="number" min="1" value={it.qty} onChange={e=>updateItem(i,'qty',e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Qty" />
                   </div>
+                  <input value={it.reason} onChange={e=>updateItem(i,'reason',e.target.value)} placeholder="Reason for return"
+                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
                   {form.items.length>1&&<button onClick={()=>setForm(f=>({...f,items:f.items.filter((_,idx)=>idx!==i)}))} className="text-xs text-red-500 hover:underline">Remove</button>}
                 </div>
               ))}
-              <button onClick={()=>setForm(f=>({...f,items:[...f.items,{description:'',qty:1,reason:'',condition:'sellable',material:''}]}))} className="text-xs text-purple-600 hover:underline flex items-center gap-1"><i className="bi bi-plus"/>Add Item</button>
+              <button onClick={()=>setForm(f=>({...f,items:[...f.items,{description:'',qty:1,reason:''}]}))} className="text-xs text-purple-600 hover:underline flex items-center gap-1"><i className="bi bi-plus"/>Add Item</button>
               <div><label className="block text-xs font-medium text-slate-700 mb-1">Refund Type</label>
                 <select value={form.refundType} onChange={e=>setForm(f=>({...f,refundType:e.target.value}))} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                   <option value="credit_note">Credit Note</option><option value="replacement">Replacement</option><option value="refund">Cash Refund</option>
@@ -187,7 +204,6 @@ export default function SalesReturns() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className={`px-6 py-4 rounded-t-2xl text-white ${actionModal.type==='approve'?'bg-emerald-600':'bg-red-600'}`}>
               <h3 className="font-semibold">{actionModal.type==='approve'?'✓ Approve':'✗ Reject'} RMA — {actionModal.rma.rmaNumber}</h3>
-              {actionModal.type==='approve'&&<p className="text-xs opacity-80 mt-0.5">Sellable items will be automatically restocked</p>}
             </div>
             <div className="px-6 py-5">
               <label className="block text-sm font-medium text-slate-700 mb-1">Approved/Rejected By *</label>

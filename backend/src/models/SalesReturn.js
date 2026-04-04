@@ -4,8 +4,6 @@ const returnItemSchema = new mongoose.Schema({
   description: { type: String, required: true, trim: true },
   qty: { type: Number, required: true, min: 1 },
   reason: { type: String, trim: true },
-  condition: { type: String, enum: ['sellable', 'damaged'], default: 'sellable' },
-  material: { type: mongoose.Schema.Types.ObjectId, ref: 'MaterialCatalog', default: null },
 }, { _id: false });
 
 const salesReturnSchema = new mongoose.Schema(

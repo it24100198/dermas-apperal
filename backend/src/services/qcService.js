@@ -9,14 +9,6 @@ import {
 import { WASHING_TRANSFER_STATUS, PACKING_BATCH_STATUS, PACKING_BATCH_TYPE } from '../utils/statusMachine.js';
 import { withTransaction } from '../utils/withTransaction.js';
 
-function generateBatchCode(jobNumber = 'JOB', batchType = PACKING_BATCH_TYPE.GOOD) {
-  const typeKey = batchType === PACKING_BATCH_TYPE.GOOD ? 'GOOD' : 'DMG';
-  const ts = Date.now().toString().slice(-6);
-  const rand = Math.floor(Math.random() * 900 + 100);
-  const jobKey = String(jobNumber || 'JOB').replace(/[^A-Za-z0-9]/g, '').slice(-8) || 'JOB';
-  return `${jobKey}-${typeKey}-${ts}${rand}`;
-}
-
 export async function listQcTransfers() {
   return WashingTransfer.find({ status: WASHING_TRANSFER_STATUS.WASHING_COMPLETED })
     .populate('jobId', 'jobNumber productId status')
@@ -46,7 +38,6 @@ export async function getQcDetail(transferId) {
       const goodBatch = await PackingBatch.create({
         jobId,
         washingTransferId: transferId,
-        batchCode: generateBatchCode(job.jobNumber, PACKING_BATCH_TYPE.GOOD),
         type: PACKING_BATCH_TYPE.GOOD,
         quantity: qcCheck.finishedGoodQty,
         status: PACKING_BATCH_STATUS.PACKING,
@@ -54,20 +45,12 @@ export async function getQcDetail(transferId) {
       const damageBatch = await PackingBatch.create({
         jobId,
         washingTransferId: transferId,
-        batchCode: generateBatchCode(job.jobNumber, PACKING_BATCH_TYPE.DAMAGE),
         type: PACKING_BATCH_TYPE.DAMAGE,
         quantity: qcCheck.damagedQty,
         status: PACKING_BATCH_STATUS.PACKING,
       });
       packingBatches = [goodBatch.toObject(), damageBatch.toObject()];
     }
-  }
-  // Backfill missing batch codes for existing data.
-  const missingCodes = (packingBatches || []).filter((b) => !b.batchCode);
-  for (const b of missingCodes) {
-    const batchCode = generateBatchCode(job?.jobNumber || transfer.jobId?.jobNumber, b.type);
-    await PackingBatch.updateOne({ _id: b._id }, { $set: { batchCode } });
-    b.batchCode = batchCode;
   }
   return { transfer, job, qcCheck, packingBatches };
 }
@@ -85,8 +68,6 @@ export async function saveQc(transferId, data, userId) {
   }
   const jobId = transfer.jobId;
   if (!jobId) throw new Error('QC requires a job-linked transfer');
-  const job = await ManufacturingJob.findById(jobId).lean();
-  const jobNumber = job?.jobNumber || String(jobId);
 
   return withTransaction(async (session) => {
     const existing = await QcCheck.findOne({ washingTransferId: transferId }).session(session);
@@ -108,7 +89,6 @@ export async function saveQc(transferId, data, userId) {
         {
           jobId,
           washingTransferId: transferId,
-          batchCode: generateBatchCode(jobNumber, PACKING_BATCH_TYPE.GOOD),
           type: PACKING_BATCH_TYPE.GOOD,
           quantity: data.finishedGoodQty,
           status: PACKING_BATCH_STATUS.PACKING,
@@ -116,7 +96,6 @@ export async function saveQc(transferId, data, userId) {
         {
           jobId,
           washingTransferId: transferId,
-          batchCode: generateBatchCode(jobNumber, PACKING_BATCH_TYPE.DAMAGE),
           type: PACKING_BATCH_TYPE.DAMAGE,
           quantity: data.damagedQty,
           status: PACKING_BATCH_STATUS.PACKING,

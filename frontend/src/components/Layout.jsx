@@ -9,15 +9,12 @@ const navItems = [
 
 const manufacturingItems = [
   { to: '/manufacturing/overview', label: 'Overview', icon: 'bi-pie-chart-fill' },
-  { to: '/manufacturing/workflow', label: 'Workflow Board', icon: 'bi-kanban-fill' },
   { to: '/jobs', label: 'All Jobs', icon: 'bi-briefcase-fill' },
   { to: '/jobs/create', label: 'Material issue', icon: 'bi-box-seam' },
   { to: '/manufacturing/cutting', label: 'Cutting', icon: 'bi-scissors' },
   { to: '/manufacturing/line-assignment', label: 'Line assignment', icon: 'bi-list-task' },
-  { to: '/manufacturing/sections', label: 'Sections & supervisors', icon: 'bi-diagram-3' },
   { to: '/manufacturing/washing', label: 'Washing gatepass', icon: 'bi-droplet' },
-  { to: '/manufacturing/qc', label: 'QC Checking', icon: 'bi-clipboard-check' },
-  { to: '/manufacturing/final', label: 'Final Checking', icon: 'bi-patch-check-fill' },
+  { to: '/manufacturing/qc', label: 'QC / Final Checking', icon: 'bi-clipboard-check' },
 ];
 
 const orderTrackingItems = [
@@ -28,7 +25,6 @@ const orderTrackingItems = [
 
 const expenseItems = [
   { to: '/', label: 'Financial Health', icon: 'bi-graph-up-arrow' },
-  { to: '/employees', label: 'Employees', icon: 'bi-people-fill' },
   { to: '/expenses/categories', label: 'Categories', icon: 'bi-folder-fill' },
   { to: '/expenses', label: 'All Expenses', icon: 'bi-receipt' },
   { to: '/expenses/recurring', label: 'Recurring Costs', icon: 'bi-arrow-repeat' },
@@ -45,7 +41,6 @@ const purchaseItems = [
 ];
 
 const stockItems = [
-  { to: '/stock/inventory',   label: 'Inventory Dashboard', icon: 'bi-speedometer2' },
   { to: '/stock/adjustments', label: 'Stock Adjustments', icon: 'bi-sliders' },
   { to: '/stock/issuance',    label: 'Material Issuance',  icon: 'bi-box-arrow-right' },
   { to: '/stock/history',    label: 'Stock History',      icon: 'bi-clock-history' },
@@ -61,15 +56,6 @@ const salesItems = [
   { to: '/sales/analytics',  label: 'Sales Analytics',      icon: 'bi-graph-up-arrow' },
 ];
 
-const aiItems = [
-  { to: '/ai/dashboard',         label: 'AI Dashboard',         icon: 'bi-cpu' },
-  { to: '/ai/wastage',           label: 'Wastage Prediction',   icon: 'bi-recycle' },
-  { to: '/ai/efficiency',        label: 'Efficiency AI',        icon: 'bi-speedometer2' },
-  { to: '/ai/suggestions',       label: 'Smart Suggestions',    icon: 'bi-lightbulb' },
-  { to: '/ai/worker-performance',label: 'Worker AI',            icon: 'bi-people' },
-  { to: '/ai/alerts',            label: 'Alerts',               icon: 'bi-bell' },
-];
-
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [manufacturingOpen, setManufacturingOpen] = useState(true);
@@ -78,7 +64,6 @@ export default function Layout() {
   const [stockOpen, setStockOpen] = useState(true);
   const [purchaseOpen, setPurchaseOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(true);
-  const [aiOpen, setAiOpen] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -252,40 +237,6 @@ export default function Layout() {
                       <span>{item.label}</span>
                     </NavLink>
                   ))}
-
-                  {/* ── AI Production Intelligence sub-submenu ── */}
-                  <div className="mt-1.5 pt-1.5 border-t border-slate-700">
-                    <button
-                      onClick={() => setAiOpen(!aiOpen)}
-                      className="flex items-center justify-between w-full pl-3 pr-2 py-2 rounded-lg mx-2 text-sm text-indigo-300 hover:bg-indigo-900/50 hover:text-white transition-colors group -ml-px"
-                    >
-                      <span className="flex items-center gap-2">
-                        <i className="bi bi-cpu shrink-0 w-5 text-center text-indigo-400" />
-                        <span className="font-medium">AI Insights</span>
-                        <span className="text-[10px] px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded-full font-semibold">AI</span>
-                      </span>
-                      <i className={`bi bi-chevron-down text-indigo-400 text-xs transition-transform duration-200 ${aiOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {aiOpen && (
-                      <div className="ml-3 pl-2 border-l border-indigo-600/40 space-y-0.5 mt-0.5">
-                        {aiItems.map((item) => (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                              `flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg mx-1 text-xs transition-colors border-l-2 -ml-px ${isActive
-                                ? 'bg-indigo-700/60 text-white border-indigo-400'
-                                : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white border-transparent'
-                              }`
-                            }
-                          >
-                            <i className={`bi ${item.icon} shrink-0 w-4 text-center opacity-90`} />
-                            <span>{item.label}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
             </>

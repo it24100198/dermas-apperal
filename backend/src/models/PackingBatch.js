@@ -5,7 +5,6 @@ const packingBatchSchema = new mongoose.Schema(
   {
     jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'ManufacturingJob', required: true },
     washingTransferId: { type: mongoose.Schema.Types.ObjectId, ref: 'WashingTransfer', default: null },
-    batchCode: { type: String, trim: true, default: '' },
     type: { type: String, required: true, enum: Object.values(PACKING_BATCH_TYPE) },
     quantity: { type: Number, required: true, min: 0 },
     status: {
@@ -21,6 +20,5 @@ const packingBatchSchema = new mongoose.Schema(
 packingBatchSchema.index({ jobId: 1 });
 packingBatchSchema.index({ washingTransferId: 1 });
 packingBatchSchema.index({ status: 1 });
-packingBatchSchema.index({ batchCode: 1 });
 
 export default mongoose.model('PackingBatch', packingBatchSchema);

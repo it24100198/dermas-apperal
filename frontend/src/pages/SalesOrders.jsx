@@ -8,6 +8,19 @@ const STATUS_COLORS = {
   delivered:'bg-emerald-100 text-emerald-700', cancelled:'bg-red-100 text-red-700',
 };
 
+const PRODUCTS = [
+  "Men's Slim Fit Jeans",
+  "Men's Regular Fit Jeans",
+  "Women's Jeans",
+  "Men's T-Shirt",
+  "Women's T-Shirt",
+  "Men's Polo Shirt",
+  "Men's Jacket",
+  "Women's Jacket",
+  "Shorts",
+  "Trousers",
+];
+
 const emptyForm = {
   customer: { name:'', email:'', phone:'', address:'' },
   items: [{ description:'', qty:1, unitPrice:0, costPrice:0, totalPrice:0 }],
@@ -114,7 +127,7 @@ export default function SalesOrders() {
                       <div><p className="text-slate-500 text-xs">Customer</p><p className="font-medium text-slate-800">{o.customer.name}</p><p className="text-xs text-slate-400">{o.customer.email} · {o.customer.phone}</p></div>
                       <div><p className="text-slate-500 text-xs">Address</p><p className="text-slate-600">{o.customer.address||'—'}</p></div>
                     </div>
-                    <table className="w-full text-sm"><thead><tr className="text-xs text-slate-400">{['Item','Qty','Unit Price','Cost','Total'].map(h=><th key={h} className="text-left py-1 pr-4 font-medium">{h}</th>)}</tr></thead>
+                    <table className="w-full text-sm"><thead><tr className="text-xs text-slate-400">{['Product Name','Qty','Unit Price','Cost','Total'].map(h=><th key={h} className="text-left py-1 pr-4 font-medium">{h}</th>)}</tr></thead>
                       <tbody className="divide-y divide-slate-100">
                         {o.items.map((it,i)=>(
                           <tr key={i} className="text-slate-700">
@@ -160,12 +173,18 @@ export default function SalesOrders() {
               </div>
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-2 text-xs text-slate-400 font-medium">
-                  <span className="col-span-4">Description</span><span className="col-span-2">Qty</span>
+                  <span className="col-span-4">Product Name</span><span className="col-span-2">Qty</span>
                   <span className="col-span-2">Unit Price</span><span className="col-span-2">Cost Price</span><span className="col-span-2">Total</span>
                 </div>
                 {form.items.map((it,i)=>(
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                    <input value={it.description} onChange={e=>updateItem(i,'description',e.target.value)} className="col-span-4 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Item name"/>
+                    <select value={it.description} onChange={e=>updateItem(i,'description',e.target.value)}
+                      className="col-span-4 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+                      <option value="">-- Select Product --</option>
+                      {PRODUCTS.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                     <input type="number" min="1" value={it.qty} onChange={e=>updateItem(i,'qty',e.target.value)} className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
                     <input type="number" min="0" value={it.unitPrice} onChange={e=>updateItem(i,'unitPrice',e.target.value)} className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
                     <input type="number" min="0" value={it.costPrice} onChange={e=>updateItem(i,'costPrice',e.target.value)} className="col-span-2 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Cost"/>

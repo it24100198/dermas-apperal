@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -5,6 +6,19 @@ import { listCustomerOrders, createCustomerOrder, deleteCustomerOrder } from '..
 
 const ALL_STATUSES = [
     'confirmed', 'in_production', 'cutting', 'washing', 'qc', 'packing', 'delivered',
+];
+
+const PRODUCTS = [
+    "Men's Slim Fit Jeans",
+    "Men's Regular Fit Jeans",
+    "Women's Jeans",
+    "Men's T-Shirt",
+    "Women's T-Shirt",
+    "Men's Polo Shirt",
+    "Men's Jacket",
+    "Women's Jacket",
+    "Shorts",
+    "Trousers",
 ];
 
 function statusColor(status, isDelayed) {
@@ -252,9 +266,14 @@ export default function CustomerOrdersList() {
                                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Phone / email" />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">Product Description *</label>
-                                <input value={form.productDescription} onChange={(e) => setForm((f) => ({ ...f, productDescription: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Men's Slim Fit Jeans – Style A23" />
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Product Name *</label>
+                                <select value={form.productDescription} onChange={(e) => setForm((f) => ({ ...f, productDescription: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="">-- Select Product --</option>
+                                    {PRODUCTS.map((p) => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-slate-600 mb-1">Expected Delivery Date *</label>

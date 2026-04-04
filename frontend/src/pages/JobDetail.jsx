@@ -6,10 +6,8 @@ import {
   sendJobToCutting,
   getAssignLinesMeta,
   assignLines,
-  createWashingTransfer,
 } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
-import JobAIPanel from '../components/JobAIPanel';
 
 const CAN_SEND_CUTTING = 'FABRIC_ISSUED';
 const CAN_ASSIGN_LINES = 'CUTTING_COMPLETED';
@@ -40,20 +38,6 @@ function getCurrentStep(status) {
   if (status === 'PACKING_COMPLETED') return 7;
   if (status === 'WAREHOUSE_RECEIVED') return 7;
   return 1;
-}
-
-function getPendingNextStep(status) {
-  if (status === 'FABRIC_ISSUED') return 'Send this job to Cutting.';
-  if (status === 'SENT_TO_CUTTING') return 'Enter Cutting Details and complete cutting.';
-  if (status === 'CUTTING_COMPLETED') return 'Assign lines and product to start production.';
-  if (status === 'LINE_ASSIGNED') return 'Start Hourly Output entry.';
-  if (status === 'LINE_IN_PROGRESS') return 'Continue hourly production or send produced qty to Washing.';
-  if (status === 'LINE_COMPLETED') return 'Send qty to Washing transfer.';
-  if (status === 'WASHING_OUT') return 'Complete washing and move this transfer to QC.';
-  if (status === 'AFTER_WASH_RECEIVED') return 'Open QC and process pass/reject quantities.';
-  if (status === 'PACKING_COMPLETED') return 'Open Final Checking and finalize batch.';
-  if (status === 'WAREHOUSE_RECEIVED') return 'Job is fully completed.';
-  return 'Follow the next action to proceed.';
 }
 
 function CollapsibleCard({ title, icon, open: controlledOpen, onToggle, children, defaultOpen = false }) {
@@ -92,7 +76,6 @@ export default function JobDetail() {
   const [openSection, setOpenSection] = useState({ fabric: true, cutting: true, line: true, washing: true });
   const [actionModal, setActionModal] = useState(null);
   const [confirmSendCutting, setConfirmSendCutting] = useState(false);
-  const [washingForm, setWashingForm] = useState({ quantitySent: '', sentFrom: '' });
 
   const { data: job, isLoading, error } = useQuery({
     queryKey: ['job', jobId],
@@ -119,15 +102,6 @@ export default function JobDetail() {
       queryClient.invalidateQueries({ queryKey: ['job', jobId] });
       setAssignForm((f) => ({ ...f, showForm: false }));
       setActionModal(null);
-    },
-  });
-  const washingMutation = useMutation({
-    mutationFn: (body) => createWashingTransfer(body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-      queryClient.invalidateQueries({ queryKey: ['washing'] });
-      setActionModal(null);
-      setWashingForm({ quantitySent: '', sentFrom: '' });
     },
   });
 
@@ -166,24 +140,10 @@ export default function JobDetail() {
 
   const canSendToCutting = job.status === CAN_SEND_CUTTING;
   const canAssignLines = job.status === CAN_ASSIGN_LINES;
-  const canSendToWashing = ['LINE_IN_PROGRESS', 'LINE_COMPLETED', 'WASHING_OUT'].includes(job.status);
   const totalCutPieces = job.totalCutPieces ?? 0;
   const totalAssigned = (assignForm.assignments || []).reduce((s, a) => s + (a.assignedQuantity || 0), 0);
   const assignValid = totalAssigned === totalCutPieces && totalCutPieces > 0 && assignForm.productId;
   const currentStep = getCurrentStep(job.status);
-  const availableToSend = Number(job.availableToSend || 0);
-  const pendingNextStep = getPendingNextStep(job.status);
-  const handleWashingSubmit = (e) => {
-    e.preventDefault();
-    const qty = Number(washingForm.quantitySent || 0);
-    if (qty <= 0 || qty > availableToSend) return;
-    washingMutation.mutate({
-      jobId: job._id,
-      quantitySent: qty,
-      sentFrom: washingForm.sentFrom || undefined,
-    });
-  };
-
 
   const handleAddLine = () => {
     const lines = meta?.lines || [];
@@ -224,15 +184,8 @@ export default function JobDetail() {
     canSendToCutting && { id: 'send-cutting', label: 'Send to Cutting', icon: 'bi-send', primary: true, onClick: () => setConfirmSendCutting(true), loading: sendCuttingMutation.isPending },
     job.status === 'SENT_TO_CUTTING' && { id: 'cutting-details', label: 'Enter Cutting Details', icon: 'bi-pencil-square', onClick: () => navigate('/manufacturing/cutting') },
     canAssignLines && { id: 'assign-line', label: 'Assign to Line', icon: 'bi-people', primary: true, onClick: () => { setAssignForm((f) => ({ ...f, showForm: true, assignments: [{ lineName: meta?.lines?.[0]?.name || '', assignedQuantity: 0 }] })); setActionModal('assign'); } },
-    // Pass jobId so HourlyProduction can preselect the job and show the table immediately.
-    ['LINE_ASSIGNED', 'LINE_IN_PROGRESS'].includes(job.status) && { id: 'hourly', label: 'Hourly Output', icon: 'bi-clock', onClick: () => navigate(`/production/hourly?jobId=${job._id}`) },
-    canSendToWashing && {
-      id: 'washing-send',
-      label: `Send to Washing${availableToSend > 0 ? ` (${availableToSend} avail.)` : ''}`,
-      icon: 'bi-droplet',
-      onClick: () => setActionModal('washing-send'),
-    },
-    ['LINE_COMPLETED', 'WASHING_OUT', 'LINE_IN_PROGRESS'].includes(job.status) && { id: 'washing', label: 'Open Washing Board', icon: 'bi-box-arrow-up-right', onClick: () => navigate('/manufacturing/washing') },
+    ['LINE_ASSIGNED', 'LINE_IN_PROGRESS'].includes(job.status) && { id: 'hourly', label: 'Hourly Output', icon: 'bi-clock', onClick: () => navigate('/production/hourly') },
+    ['LINE_COMPLETED', 'WASHING_OUT'].includes(job.status) && { id: 'washing', label: 'Washing Gate Pass', icon: 'bi-droplet', onClick: () => navigate('/manufacturing/washing') },
     ['AFTER_WASH_RECEIVED', 'PACKING_COMPLETED'].includes(job.status) && { id: 'qc', label: 'QC & Packing', icon: 'bi-clipboard-check', onClick: () => navigate('/manufacturing/qc') },
   ].filter(Boolean);
 
@@ -283,8 +236,7 @@ export default function JobDetail() {
         </div>
       </div>
 
-      {/* 🤖 AI Production Intelligence Panel */}
-      <JobAIPanel jobId={job._id} jobNumber={job.jobNumber} />
+      {/* Next Step Actions */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
           <h2 className="font-semibold text-slate-800 flex items-center gap-2">
@@ -309,12 +261,6 @@ export default function JobDetail() {
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-        <p className="text-sm">
-          <span className="font-semibold">Pending Next Step:</span> {pendingNextStep}
-        </p>
       </div>
 
       {/* Detail cards - collapsible */}
@@ -451,74 +397,6 @@ export default function JobDetail() {
                 </button>
                 <button type="button" onClick={() => { setAssignForm((f) => ({ ...f, showForm: false })); setActionModal(null); }} className="px-4 py-2 border rounded-lg">
                   Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Send to washing modal */}
-      {actionModal === 'washing-send' && canSendToWashing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity duration-200">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Send to Washing</h2>
-              <button
-                type="button"
-                onClick={() => setActionModal(null)}
-                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"
-              >
-                <i className="bi bi-x-lg" />
-              </button>
-            </div>
-            <form onSubmit={handleWashingSubmit} className="p-5 space-y-4">
-              <p className="text-sm text-slate-600">
-                Available to send from produced qty: <strong>{availableToSend}</strong>
-              </p>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Quantity to send *</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={Math.max(0, availableToSend)}
-                  value={washingForm.quantitySent}
-                  onChange={(e) => setWashingForm((f) => ({ ...f, quantitySent: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-                <p className="text-xs text-slate-500 mt-1">Cannot exceed available produced qty.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Sent from</label>
-                <input
-                  type="text"
-                  value={washingForm.sentFrom}
-                  onChange={(e) => setWashingForm((f) => ({ ...f, sentFrom: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  placeholder="Line / Section"
-                />
-              </div>
-              {washingMutation.isError && (
-                <p className="text-red-600 text-sm">
-                  {washingMutation.error?.response?.data?.error || washingMutation.error?.message || 'Failed to send'}
-                </p>
-              )}
-              <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setActionModal(null)} className="px-4 py-2 border rounded-lg">
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    washingMutation.isPending ||
-                    availableToSend <= 0 ||
-                    Number(washingForm.quantitySent || 0) <= 0 ||
-                    Number(washingForm.quantitySent || 0) > availableToSend
-                  }
-                  className="px-4 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50"
-                >
-                  Send Transfer
                 </button>
               </div>
             </form>

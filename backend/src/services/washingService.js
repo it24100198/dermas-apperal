@@ -3,9 +3,9 @@ import {
   ManufacturingJob,
   WashingTransfer,
   HourlyProduction,
-  JobLineAssignment,
 } from '../models/index.js';
 import { JOB_STATUS, WASHING_TRANSFER_STATUS } from '../utils/statusMachine.js';
+import { assertTransition } from '../utils/statusMachine.js';
 
 export async function getWashingView() {
   const [incomingPending, inProgressReceived, completedWashing, returned] = await Promise.all([
@@ -34,20 +34,7 @@ async function getTotalProducedForJob(jobId) {
     { $match: { jobId: new mongoose.Types.ObjectId(jobId) } },
     { $group: { _id: null, total: { $sum: '$quantity' } } },
   ]);
-  const hourlyTotal = result[0]?.total ?? 0;
-  if (hourlyTotal > 0) return hourlyTotal;
-
-  // Fallback: if hourly is not entered yet, use assigned/cut quantity for completed line jobs.
-  const [job, assigned] = await Promise.all([
-    ManufacturingJob.findById(jobId).lean(),
-    JobLineAssignment.aggregate([
-      { $match: { jobId: new mongoose.Types.ObjectId(jobId) } },
-      { $group: { _id: null, total: { $sum: '$assignedQuantity' } } },
-    ]),
-  ]);
-  const assignedTotal = assigned[0]?.total ?? 0;
-  if (assignedTotal > 0) return assignedTotal;
-  return Number(job?.totalCutPieces || 0);
+  return result[0]?.total ?? 0;
 }
 
 async function getTotalAlreadySentForJob(jobId) {
@@ -70,21 +57,11 @@ export async function createTransfer(data, session = null) {
   if (data.jobId) {
     const job = await ManufacturingJob.findById(data.jobId).session(session);
     if (!job) throw new Error('Job not found');
-    const allowedJobStatuses = [
-      JOB_STATUS.LINE_IN_PROGRESS,
-      JOB_STATUS.LINE_COMPLETED,
-      JOB_STATUS.WASHING_OUT,
-    ];
-    if (!allowedJobStatuses.includes(job.status)) {
-      throw new Error('Job must be LINE_IN_PROGRESS, LINE_COMPLETED, or WASHING_OUT to send washing transfer');
-    }
     const available = await getAvailableToSend(data.jobId);
     if (data.quantitySent > available) {
       throw new Error(`Available to send: ${available}. Cannot send ${data.quantitySent}.`);
     }
-    if (data.quantitySent <= 0) {
-      throw new Error('Quantity must be greater than 0');
-    }
+    assertTransition(job.status, JOB_STATUS.WASHING_OUT);
   }
   const transfer = await WashingTransfer.create(
     [
@@ -98,16 +75,11 @@ export async function createTransfer(data, session = null) {
     { session }
   ).then((r) => r[0]);
   if (data.jobId) {
-    const job = await ManufacturingJob.findById(data.jobId).session(session);
-    // Keep LINE_IN_PROGRESS jobs as-is to allow continuous hourly entries.
-    // Move LINE_COMPLETED jobs to WASHING_OUT once transfer starts.
-    if (job?.status === JOB_STATUS.LINE_COMPLETED) {
-      await ManufacturingJob.updateOne(
-        { _id: data.jobId },
-        { $set: { status: JOB_STATUS.WASHING_OUT } },
-        { session }
-      );
-    }
+    await ManufacturingJob.updateOne(
+      { _id: data.jobId },
+      { $set: { status: JOB_STATUS.WASHING_OUT } },
+      { session }
+    );
   }
   return transfer.toObject();
 }

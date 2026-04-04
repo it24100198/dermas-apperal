@@ -13,31 +13,11 @@ import * as washingService from './washingService.js';
 
 export async function listJobs(filters = {}) {
   const query = {};
-  const includeAvailableToSend =
-    filters.includeAvailableToSend === true || filters.includeAvailableToSend === 'true';
-  const washingEligibleOnly =
-    filters.washingEligibleOnly === true || filters.washingEligibleOnly === 'true';
-
-  if (washingEligibleOnly) {
-    query.status = { $in: [JOB_STATUS.LINE_IN_PROGRESS, JOB_STATUS.LINE_COMPLETED, JOB_STATUS.WASHING_OUT] };
-  } else if (filters.status) {
-    query.status = filters.status;
-  }
-
-  const jobs = await ManufacturingJob.find(query)
+  if (filters.status) query.status = filters.status;
+  return ManufacturingJob.find(query)
     .populate('productId', 'name sku')
     .sort({ createdAt: -1 })
     .lean();
-
-  if (!includeAvailableToSend) return jobs;
-
-  const withAvailable = await Promise.all(
-    jobs.map(async (job) => ({
-      ...job,
-      availableToSend: await washingService.getAvailableToSend(job._id),
-    }))
-  );
-  return withAvailable;
 }
 
 export async function getJob(jobId) {

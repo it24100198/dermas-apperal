@@ -23,7 +23,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manufacturing_erp')
+  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/manufacturing_erp')
   .then(() => {
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
   })

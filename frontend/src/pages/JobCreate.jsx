@@ -17,7 +17,7 @@ export default function JobCreate() {
     queryKey: ['materials'],
     queryFn: () => getMaterials().then((r) => r.data),
   });
-  const rawMaterials = materials || [];
+  const fabricMaterials = (materials || []).filter((m) => m.type === 'fabric');
 
   const createMutation = useMutation({
     mutationFn: (body) => createJob(body),
@@ -40,23 +40,20 @@ export default function JobCreate() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Material issue (Create Job)</h1>
-      <p className="text-slate-500 mb-4">Select raw material from inventory and issue quantity. This creates a MaterialIssue and a ManufacturingJob (FABRIC_ISSUED).</p>
+      <p className="text-slate-500 mb-4">Select fabric, issue quantity. This creates a MaterialIssue and a ManufacturingJob (FABRIC_ISSUED).</p>
       <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-lg">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Raw material *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Fabric (Material) *</label>
             <select
               value={form.materialId}
               onChange={(e) => setForm((f) => ({ ...f, materialId: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg"
               required
             >
-              <option value="">Select raw material</option>
-              {rawMaterials.map((m) => (
-                <option key={m._id} value={m._id}>
-                  {m.name} ({m.type}) — stock {m.stockQty} {m.unit}
-                  {m.unitPrice != null && Number(m.unitPrice) > 0 ? ` · Rs.${Number(m.unitPrice).toLocaleString()}/${m.unit}` : ''}
-                </option>
+              <option value="">Select fabric</option>
+              {fabricMaterials.map((m) => (
+                <option key={m._id} value={m._id}>{m.name} (stock: {m.stockQty} {m.unit})</option>
               ))}
             </select>
           </div>

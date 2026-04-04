@@ -33,7 +33,6 @@ export default function SupervisorDashboard() {
               <tr className="bg-slate-50 text-slate-600 text-left">
                 <th className="px-4 py-3">Job #</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Hourly</th>
                 <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
@@ -44,14 +43,6 @@ export default function SupervisorDashboard() {
                     <Link to={`/jobs/${job._id}`} className="text-blue-600 hover:underline">{job.jobNumber}</Link>
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={job.status} /></td>
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/supervisor/hourly?jobId=${job._id}`}
-                      className="text-amber-700 hover:underline"
-                    >
-                      Hourly output
-                    </Link>
-                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => completeMutation.mutate(job._id)}

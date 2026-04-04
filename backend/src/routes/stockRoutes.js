@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import MaterialCatalog from '../models/MaterialCatalog.js';
-import Material from '../models/Material.js';
 import StockAdjustment from '../models/StockAdjustment.js';
 import MaterialIssuance from '../models/MaterialIssuance.js';
 import StockMovement from '../models/StockMovement.js';
@@ -181,16 +180,9 @@ router.get('/overview', async (req, res, next) => {
   try {
     const materials = await MaterialCatalog.find().lean();
     const totalItems = materials.length;
-    const catalogValue = materials.reduce((s, m) => s + (m.currentStock * (m.unitPrice || 0)), 0);
+    const totalValue = materials.reduce((s, m) => s + (m.currentStock * (m.unitPrice || 0)), 0);
     const lowStock   = materials.filter(m => m.reorderLevel > 0 && m.currentStock <= m.reorderLevel).length;
     const outOfStock = materials.filter(m => m.currentStock === 0).length;
-
-    const rawMfg = await Material.find().lean();
-    const manufacturingRawItems = rawMfg.length;
-    const manufacturingRawValue = rawMfg.reduce((s, m) => s + (m.stockQty * (m.unitPrice || 0)), 0);
-
-    const totalValue = catalogValue + manufacturingRawValue;
-    const totalItemsAll = totalItems + manufacturingRawItems;
 
     // Recent movements
     const recentMovements = await StockMovement.find()
@@ -198,17 +190,7 @@ router.get('/overview', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
-    res.json({
-      totalItems,
-      totalItemsAll,
-      totalValue,
-      catalogValue,
-      manufacturingRawItems,
-      manufacturingRawValue,
-      lowStock,
-      outOfStock,
-      recentMovements,
-    });
+    res.json({ totalItems, totalValue, lowStock, outOfStock, recentMovements });
   } catch (err) { next(err); }
 });
 

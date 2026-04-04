@@ -66,8 +66,7 @@ router.get('/summary', async (req, res, next) => {
           as: 'cat',
         },
       },
-      // MongoDB expects `preserveNullAndEmptyArrays` (not `preserveNullAndEmpty`)
-      { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$cat', preserveNullAndEmpty: true } },
       {
         $project: {
           month: '$_id.month',

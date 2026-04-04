@@ -11,7 +11,6 @@ import reimbursementRoutes from './reimbursementRoutes.js';
 import purchaseRoutes from './purchaseRoutes.js';
 import stockRoutes from './stockRoutes.js';
 import salesRoutes from './salesRoutes.js';
-import aiRoutes from './aiRoutes.js';
 
 const router = Router();
 
@@ -27,6 +26,5 @@ router.use('/reimbursements', reimbursementRoutes);
 router.use('/purchase', purchaseRoutes);
 router.use('/stock', stockRoutes);
 router.use('/sales', salesRoutes);
-router.use('/ai', aiRoutes);
 
 export default router;

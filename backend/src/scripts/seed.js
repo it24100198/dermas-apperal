@@ -19,17 +19,7 @@ import {
 import { JOB_STATUS } from '../utils/statusMachine.js';
 
 async function seed() {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manufacturing_erp';
-  console.log('Connecting to MongoDB (seed/migrate)...');
-  try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 15_000 });
-  } catch (e) {
-    console.error('\nCould not reach MongoDB. Start the database first:');
-    console.error('  • From backend folder: npm run db:up   (Docker Desktop must be running)');
-    console.error('  • Or install/start MongoDB locally on port 27017');
-    console.error('  • Or set MONGODB_URI in .env for MongoDB Atlas\n');
-    throw e;
-  }
+  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/manufacturing_erp');
 
   await StockLedger.deleteMany({});
   await PackingBatch.deleteMany({});
@@ -74,14 +64,10 @@ async function seed() {
     { userId: users[4]._id, role: 'operator', name: 'Operator' },
   ]);
 
-  await ProductionSection.updateOne({ _id: cuttingSection._id }, { supervisorEmployeeId: employees[1]._id });
-  await ProductionSection.updateOne({ _id: washingSection._id }, { supervisorEmployeeId: employees[2]._id });
-  await ProductionSection.updateOne({ _id: line01._id }, { supervisorEmployeeId: employees[3]._id });
-
   await Material.insertMany([
-    { name: 'Cotton Fabric White', type: 'fabric', stockQty: 5000, unit: 'm', unitPrice: 450 },
-    { name: 'Zipper #5', type: 'accessory', stockQty: 2000, unit: 'pcs', unitPrice: 85 },
-    { name: 'Buttons Set A', type: 'accessory', stockQty: 5000, unit: 'pcs', unitPrice: 12 },
+    { name: 'Cotton Fabric White', type: 'fabric', stockQty: 5000, unit: 'm' },
+    { name: 'Zipper #5', type: 'accessory', stockQty: 2000, unit: 'pcs' },
+    { name: 'Buttons Set A', type: 'accessory', stockQty: 5000, unit: 'pcs' },
   ]);
 
   const sampleProduct = await Product.create({

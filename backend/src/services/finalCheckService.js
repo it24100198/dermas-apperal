@@ -3,8 +3,6 @@ import {
   ManufacturingJob,
   Product,
   StockLedger,
-  MaterialIssue,
-  Material,
 } from '../models/index.js';
 import { PACKING_BATCH_STATUS, PACKING_BATCH_TYPE, JOB_STATUS } from '../utils/statusMachine.js';
 import { withTransaction } from '../utils/withTransaction.js';
@@ -17,84 +15,17 @@ export async function listFinalJobs() {
     .populate('productId', 'name sku')
     .sort({ updatedAt: -1 })
     .lean();
-
-  // Attach pending batch counts
-  const counts = await PackingBatch.aggregate([
-    { $match: { jobId: { $in: batchIds }, status: PACKING_BATCH_STATUS.SENT_TO_FINAL_CHECK } },
-    { $group: { _id: '$jobId', pendingCount: { $sum: 1 }, totalQty: { $sum: '$quantity' } } },
-  ]);
-  const countMap = {};
-  counts.forEach((c) => { countMap[String(c._id)] = c; });
-
-  return jobs.map((j) => ({
-    ...j,
-    pendingCount: countMap[String(j._id)]?.pendingCount ?? 0,
-    pendingQty: countMap[String(j._id)]?.totalQty ?? 0,
-  }));
+  return jobs;
 }
 
 export async function getFinalJobDetail(jobId) {
   const job = await ManufacturingJob.findById(jobId).populate('productId').lean();
   if (!job) throw new Error('Job not found');
-
   const batches = await PackingBatch.find({
     jobId,
     status: { $in: [PACKING_BATCH_STATUS.SENT_TO_FINAL_CHECK, PACKING_BATCH_STATUS.COMPLETED] },
   }).lean();
-
-  // --- Material cost calculation ---
-  // All material issues for this job
-  const issues = await MaterialIssue.find({ jobId }).populate('materialId', 'name unit unitPrice').lean();
-
-  const materialBreakdown = [];
-  const materialMap = {};
-  for (const issue of issues) {
-    const mat = issue.materialId;
-    if (!mat) continue;
-    const id = String(mat._id);
-    const unitPrice = mat.unitPrice || 0;
-    const lineTotal = unitPrice * issue.quantityIssued;
-    if (materialMap[id]) {
-      materialMap[id].qtyIssued += issue.quantityIssued;
-      materialMap[id].totalCost += lineTotal;
-    } else {
-      materialMap[id] = {
-        materialId: id,
-        name: mat.name,
-        unit: mat.unit,
-        unitPrice,
-        qtyIssued: issue.quantityIssued,
-        totalCost: lineTotal,
-      };
-    }
-  }
-  Object.values(materialMap).forEach((m) => materialBreakdown.push(m));
-
-  const totalMaterialCost = materialBreakdown.reduce((s, m) => s + m.totalCost, 0);
-
-  // Produced good pcs: sum of completed+pending GOOD batches
-  const goodBatches = batches.filter((b) => b.type === PACKING_BATCH_TYPE.GOOD);
-  const totalGoodPcs = goodBatches.reduce((s, b) => s + b.quantity, 0);
-
-  // Total produced pcs (good + damage) from QC batches
-  const allBatchesForJob = await PackingBatch.find({ jobId }).lean();
-  const totalProducedPcs = allBatchesForJob.reduce((s, b) => s + b.quantity, 0);
-
-  const costPerPieceGood = totalGoodPcs > 0 ? totalMaterialCost / totalGoodPcs : 0;
-  const costPerPieceAll = totalProducedPcs > 0 ? totalMaterialCost / totalProducedPcs : 0;
-
-  return {
-    job,
-    batches,
-    costSummary: {
-      materialBreakdown,
-      totalMaterialCost,
-      totalGoodPcs,
-      totalProducedPcs,
-      costPerPieceGood,
-      costPerPieceAll,
-    },
-  };
+  return { job, batches };
 }
 
 export async function finalizeBatch(batchId, userId) {

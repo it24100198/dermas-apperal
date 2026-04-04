@@ -18,20 +18,6 @@ export async function saveHourly(req, res) {
     await hourlyProductionService.saveHourlyProduction(req.body);
     return res.json({ ok: true });
   } catch (err) {
-    return res.status(err?.status || 400).json({ error: err.message });
-  }
-}
-
-export async function getHourlyRecords(req, res) {
-  try {
-    const employee = await Employee.findOne({ userId: req.user._id })
-      .populate('productionSectionId')
-      .lean();
-    const { jobId } = req.params;
-
-    const records = await hourlyProductionService.getHourlyRecords(jobId, employee);
-    return res.json(records);
-  } catch (err) {
     return res.status(400).json({ error: err.message });
   }
 }

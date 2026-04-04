@@ -283,8 +283,7 @@ router.get('/analytics/summary', async (req, res, next) => {
       { $lookup: { from: 'purchaseorders', localField: 'purchaseOrder', foreignField: '_id', as: 'po' } },
       { $unwind: '$po' },
       { $lookup: { from: 'suppliers', localField: 'po.supplier', foreignField: '_id', as: 'sup' } },
-      // MongoDB expects `preserveNullAndEmptyArrays` (not `preserveNullAndEmpty`)
-      { $unwind: { path: '$sup', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$sup', preserveNullAndEmpty: true } },
       { $group: { _id: '$sup._id', supplierName: { $first: '$sup.name' }, total: { $sum: '$invoiceAmount' } } },
       { $sort: { total: -1 } },
     ]);

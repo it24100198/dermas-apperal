@@ -19,8 +19,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      const path = window.location.pathname || '';
-      window.location.href = path.startsWith('/supervisor') ? '/supervisor/login' : '/login';
+      window.location.href = '/login';
     }
     return Promise.reject(err);
   }
@@ -58,7 +57,6 @@ export const assignLines = (jobId, data) => api.post(`/jobs/${jobId}/assign-line
 // Production
 export const listHourlyJobs = () => api.get('/production/hourly');
 export const saveHourlyProduction = (data) => api.post('/production/hourly', data);
-export const getHourlyRecords = (jobId) => api.get(`/production/hourly/${jobId}`);
 
 // Supervisor
 export const getSupervisorDashboard = () => api.get('/supervisor/dashboard');
@@ -66,15 +64,9 @@ export const completeLine = (jobId) => api.post(`/supervisor/lines/${jobId}/comp
 
 // Meta
 export const getMaterials = () => api.get('/meta/materials');
-export const createManufacturingMaterial = (data) => api.post('/meta/materials', data);
-export const updateManufacturingMaterial = (id, data) => api.put(`/meta/materials/${id}`, data);
 export const getProducts = () => api.get('/meta/products');
 export const getEmployees = () => api.get('/meta/employees');
 export const getSections = (params) => api.get('/meta/sections', { params });
-export const updateSection = (id, data) => api.put(`/meta/sections/${id}`, data);
-export const createEmployee = (data) => api.post('/meta/employees', data);
-export const updateEmployee = (id, data) => api.put(`/meta/employees/${id}`, data);
-export const deleteEmployee = (id) => api.delete(`/meta/employees/${id}`);
 
 // Customer Orders
 export const listCustomerOrders = (params) => api.get('/orders', { params });
