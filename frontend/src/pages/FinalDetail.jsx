@@ -25,8 +25,6 @@ export default function FinalDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['final-detail', jobId] });
       queryClient.invalidateQueries({ queryKey: ['final-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['materials'] });
-      queryClient.invalidateQueries({ queryKey: ['manufactured-products'] });
       setConfirmBatch(null);
     },
   });
@@ -40,7 +38,7 @@ export default function FinalDetail() {
     </div>
   );
 
-  const { job, batches, costSummary, recipe } = data;
+  const { job, batches, costSummary } = data;
   const pendingBatches = (batches || []).filter((b) => b.status === 'sent_to_final_check');
   const completedBatches = (batches || []).filter((b) => b.status === 'completed');
   const allDone = pendingBatches.length === 0 && completedBatches.length > 0;
@@ -104,25 +102,6 @@ export default function FinalDetail() {
             <p className="text-xl font-bold text-slate-700">LKR {fmt(cs.costPerPieceAll)}</p>
           </div>
         </div>
-
-        {recipe?.lines?.length > 0 && (
-          <div className="bg-violet-50 border border-violet-200 rounded-xl px-5 py-4 mb-6">
-            <h2 className="font-semibold text-violet-900 text-sm flex items-center gap-2 mb-2">
-              <i className="bi bi-journal-text" /> Product recipe — auto on good finalize
-            </h2>
-            <p className="text-xs text-violet-800 mb-2">
-              Finalizing a <strong>good</strong> batch deducts these materials from inventory: (qty per piece × batch pcs). Damage batches do not run the recipe.
-            </p>
-            <ul className="text-sm text-violet-900 space-y-1">
-              {recipe.lines.map((l) => (
-                <li key={l._id || l.materialId?._id}>
-                  <strong>{l.materialId?.name}</strong> — {l.quantityPerUnit} {l.materialId?.unit || 'pcs'} per good piece
-                  <span className="text-violet-600 text-xs ml-2">(stock: {l.materialId?.stockQty ?? '—'})</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* Material Cost Breakdown */}
         {breakdown.length > 0 && (
@@ -250,7 +229,7 @@ export default function FinalDetail() {
       {/* Confirm Finalize Modal */}
       {confirmBatch && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             <div className="px-6 pt-6 pb-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -285,26 +264,10 @@ export default function FinalDetail() {
                 )}
               </div>
 
-              {confirmBatch.type === 'good' && recipe?.lines?.length > 0 && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                  <p className="font-semibold mb-1">Recipe deduction (this batch)</p>
-                  <ul className="space-y-0.5">
-                    {recipe.lines.map((l) => {
-                      const total = Number(l.quantityPerUnit) * confirmBatch.quantity;
-                      return (
-                        <li key={l._id || l.materialId?._id}>
-                          {l.materialId?.name}: <strong>{total}</strong> {l.materialId?.unit || 'pcs'}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-
               <p className="text-xs text-slate-400 mt-3">
                 {confirmBatch.type === 'good'
                   ? `${confirmBatch.quantity} pcs will be added to "${job?.productId?.name}" product stock.`
-                  : `${confirmBatch.quantity} pcs will be added to the damage product (separate SKU) linked to this style.`
+                  : `${confirmBatch.quantity} pcs will be added to the Damage stock.`
                 }
               </p>
             </div>

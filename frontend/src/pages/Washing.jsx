@@ -10,21 +10,6 @@ import {
 } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 
-// Group transfers by jobId — same job's multiple transfers collapse into one row
-function groupTransfersByJob(transfers) {
-  const map = new Map();
-  for (const t of transfers) {
-    const key = t.jobId?._id || `standalone-${t._id}`;
-    if (!map.has(key)) {
-      map.set(key, { jobId: t.jobId, transfers: [], totalQty: 0 });
-    }
-    const g = map.get(key);
-    g.transfers.push(t);
-    g.totalQty += Number(t.quantitySent || 0);
-  }
-  return Array.from(map.values());
-}
-
 const TABS = [
   { key: 'incomingPending', label: 'Incoming (Pending)' },
   { key: 'inProgressReceived', label: 'In Progress (Received)' },
@@ -70,9 +55,6 @@ export default function Washing() {
   });
 
   const transfers = washingData?.[tab] || [];
-  const groupedTransfers = groupTransfersByJob(transfers);
-  const [expandedJobs, setExpandedJobs] = useState({});
-  const toggleExpand = (key) => setExpandedJobs((prev) => ({ ...prev, [key]: !prev[key] }));
   const isWashingSupervisor = true; // TODO: from auth/employee role
   const selectableJobs = jobsList || [];
   const selectedJob = selectableJobs.find((j) => j._id === createForm.jobId);
@@ -212,138 +194,52 @@ export default function Washing() {
             <thead>
               <tr className="bg-slate-50 text-slate-600 text-left">
                 <th className="px-4 py-3">Job</th>
-                <th className="px-4 py-3">Total Qty Sent</th>
-                <th className="px-4 py-3">Transfers</th>
+                <th className="px-4 py-3">Qty sent</th>
+                <th className="px-4 py-3">Sent from</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {groupedTransfers.map((group) => {
-                const key = group.jobId?._id || `standalone-${group.transfers[0]._id}`;
-                const isExpanded = expandedJobs[key];
-                const multipleTransfers = group.transfers.length > 1;
-                // Derive overall status: if any pending/received, show that; else show completed
-                const hasAction = group.transfers.some((t) => ['pending', 'received'].includes(t.status));
-                const allCompleted = group.transfers.every((t) => t.status === 'washing_completed');
-
-                return (
-                  <>
-                    {/* Summary row */}
-                    <tr key={key} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-3 font-semibold text-slate-800">
-                        {group.jobId?.jobNumber || '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-bold text-indigo-700">{group.totalQty}</span>
-                        {multipleTransfers && (
-                          <span className="ml-1 text-xs text-slate-400">
-                            ({group.transfers.map((t) => t.quantitySent).join(' + ')})
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {multipleTransfers ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleExpand(key)}
-                            className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline"
-                          >
-                            <i className={`bi bi-chevron-${isExpanded ? 'up' : 'down'}`} />
-                            {group.transfers.length} transfers
-                          </button>
-                        ) : (
-                          <span className="text-slate-500 text-xs">{group.transfers[0].sentFrom || '—'}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {allCompleted ? (
-                          <StatusBadge status="washing_completed" />
-                        ) : (
-                          <div className="flex flex-wrap gap-1">
-                            {[...new Set(group.transfers.map((t) => t.status))].map((s) => (
-                              <StatusBadge key={s} status={s} />
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {allCompleted && group.jobId?._id && (
-                          <Link
-                            to={`/manufacturing/qc/job/${group.jobId._id}`}
-                            className="inline-flex items-center gap-1 text-amber-700 hover:underline text-xs font-medium"
-                          >
-                            <i className="bi bi-clipboard-check" /> Go to QC
-                          </Link>
-                        )}
-                        {!allCompleted && !multipleTransfers && (
-                          <>
-                            {group.transfers[0].status === 'pending' && isWashingSupervisor && (
-                              <button
-                                onClick={() => receiveMutation.mutate(group.transfers[0]._id)}
-                                disabled={receiveMutation.isPending}
-                                className="text-blue-600 hover:underline text-xs mr-2"
-                              >
-                                Receive
-                              </button>
-                            )}
-                            {group.transfers[0].status === 'received' && isWashingSupervisor && (
-                              <button
-                                onClick={() => completeMutation.mutate(group.transfers[0]._id)}
-                                disabled={completeMutation.isPending}
-                                className="text-green-600 hover:underline text-xs"
-                              >
-                                Complete washing
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* Expanded sub-rows for multiple transfers */}
-                    {multipleTransfers && isExpanded && group.transfers.map((t) => (
-                      <tr key={t._id} className="bg-slate-50/70 border-t border-slate-100">
-                        <td className="px-4 py-2 pl-8 text-slate-500 text-xs">↳ Transfer</td>
-                        <td className="px-4 py-2 text-xs">{t.quantitySent} pcs</td>
-                        <td className="px-4 py-2 text-xs text-slate-500">{t.sentFrom || '—'}</td>
-                        <td className="px-4 py-2"><StatusBadge status={t.status} /></td>
-                        <td className="px-4 py-2">
-                          {t.status === 'pending' && isWashingSupervisor && (
-                            <button
-                              onClick={() => receiveMutation.mutate(t._id)}
-                              disabled={receiveMutation.isPending}
-                              className="text-blue-600 hover:underline text-xs mr-2"
-                            >
-                              Receive
-                            </button>
-                          )}
-                          {t.status === 'received' && isWashingSupervisor && (
-                            <button
-                              onClick={() => completeMutation.mutate(t._id)}
-                              disabled={completeMutation.isPending}
-                              className="text-green-600 hover:underline text-xs"
-                            >
-                              Complete washing
-                            </button>
-                          )}
-                          {t.status === 'washing_completed' && t.jobId?._id && (
-                            <Link
-                              to={`/manufacturing/qc/job/${t.jobId._id}`}
-                              className="inline-flex items-center gap-1 text-amber-700 hover:underline text-xs font-medium"
-                            >
-                              <i className="bi bi-clipboard-check" /> Go to QC
-                            </Link>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </>
-                );
-              })}
+              {transfers.map((t) => (
+                <tr key={t._id} className="border-t border-slate-100">
+                  <td className="px-4 py-3">{t.jobId?.jobNumber || '—'}</td>
+                  <td className="px-4 py-3">{t.quantitySent}</td>
+                  <td className="px-4 py-3">{t.sentFrom || '—'}</td>
+                  <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                  <td className="px-4 py-3">
+                    {t.status === 'pending' && isWashingSupervisor && (
+                      <button
+                        onClick={() => receiveMutation.mutate(t._id)}
+                        disabled={receiveMutation.isPending}
+                        className="text-blue-600 hover:underline mr-2"
+                      >
+                        Receive
+                      </button>
+                    )}
+                    {t.status === 'received' && isWashingSupervisor && (
+                      <button
+                        onClick={() => completeMutation.mutate(t._id)}
+                        disabled={completeMutation.isPending}
+                        className="text-green-600 hover:underline"
+                      >
+                        Complete washing
+                      </button>
+                    )}
+                    {t.status === 'washing_completed' && t.jobId?._id && (
+                      <Link
+                        to={`/manufacturing/qc/${t._id}`}
+                        className="text-amber-700 hover:underline"
+                      >
+                        Go to QC
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-          {groupedTransfers.length === 0 && (
+          {transfers.length === 0 && (
             <p className="px-4 py-8 text-slate-500 text-center">No transfers in this tab</p>
           )}
         </div>

@@ -131,8 +131,8 @@ export default function JobAIPanel({ jobId, jobNumber }) {
               </div>
             ) : isError ? (
               <div className="py-6 text-center text-indigo-300 text-sm">
-                <i className="bi bi-exclamation-circle text-2xl block mb-2" />
-                Could not load AI analysis. Check the server connection.
+                <i className="bi bi-wifi-off text-2xl block mb-2" />
+                AI service offline. Start the Python service to enable predictions.
               </div>
             ) : (
               <div className="space-y-4 pt-4">
@@ -142,39 +142,36 @@ export default function JobAIPanel({ jobId, jobNumber }) {
                   <div className="bg-white/8 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-indigo-200 text-xs font-medium flex items-center gap-1.5">
-                        <i className="bi bi-recycle text-amber-400" /> Fabric Wastage
+                        <i className="bi bi-recycle text-amber-400" /> Wastage Prediction
                       </span>
-                      {wastage?.risk_level && <RiskPill level={wastage.risk_level} />}
+                      {wastage && <RiskPill level={wastage.risk_level} />}
                     </div>
                     {wastage ? (
                       <>
-                        <p className="text-4xl font-black text-white mb-1">
-                          {wastage.wastage_percent ?? '—'}
-                          {wastage.wastage_percent != null && <span className="text-lg font-normal text-indigo-300 ml-1">%</span>}
+                        <p className="text-4xl font-black text-white mb-2">
+                          {wastage.wastage_percent}
+                          <span className="text-lg font-normal text-indigo-300 ml-1">%</span>
                         </p>
-                        {wastage.fabric_loss_estimate > 0 && (
-                          <p className="text-xs text-indigo-300 mb-2">
-                            ~{wastage.fabric_loss_estimate} units fabric loss
+                        {wastage.fabric_loss_estimate && (
+                          <p className="text-xs text-indigo-300">
+                            ~{wastage.fabric_loss_estimate} yards/kg fabric loss
                           </p>
                         )}
-                        <p className="text-xs text-indigo-400 italic mb-2 leading-relaxed">{wastage.explanation}</p>
-                        {wastage.wastage_percent != null && (
-                          <div className="mt-2">
-                            <MiniGauge
-                              value={wastage.wastage_percent}
-                              max={15}
-                              color={wastage.risk_level === 'high' ? '#ef4444' : wastage.risk_level === 'low' ? '#10b981' : '#f59e0b'}
-                            />
-                            <div className="flex justify-between text-xs text-indigo-400 mt-1">
-                              <span>0%</span>
-                              <span>Confidence: {wastage.confidence ?? '—'}%</span>
-                              <span>15%+</span>
-                            </div>
+                        <div className="mt-3">
+                          <MiniGauge
+                            value={wastage.wastage_percent}
+                            max={15}
+                            color={wastage.risk_level === 'high' ? '#ef4444' : wastage.risk_level === 'low' ? '#10b981' : '#f59e0b'}
+                          />
+                          <div className="flex justify-between text-xs text-indigo-400 mt-1">
+                            <span>0%</span>
+                            <span>Confidence: {wastage.confidence}%</span>
+                            <span>15%</span>
                           </div>
-                        )}
+                        </div>
                       </>
                     ) : (
-                      <p className="text-indigo-400 text-sm mt-2">No cutting data yet</p>
+                      <p className="text-indigo-400 text-sm">No data</p>
                     )}
                   </div>
 
@@ -184,38 +181,32 @@ export default function JobAIPanel({ jobId, jobNumber }) {
                       <span className="text-indigo-200 text-xs font-medium flex items-center gap-1.5">
                         <i className="bi bi-speedometer2 text-emerald-400" /> Efficiency
                       </span>
-                      {efficiency?.status && <StatusPill status={efficiency.status} />}
+                      {efficiency && <StatusPill status={efficiency.status} />}
                     </div>
                     {efficiency ? (
                       <>
-                        <p className="text-4xl font-black text-white mb-1">
-                          {efficiency.efficiency_percent ?? '—'}
-                          {efficiency.efficiency_percent != null && <span className="text-lg font-normal text-indigo-300 ml-1">%</span>}
+                        <p className="text-4xl font-black text-white mb-2">
+                          {efficiency.efficiency_percent}
+                          <span className="text-lg font-normal text-indigo-300 ml-1">%</span>
                         </p>
-                        {(efficiency.predicted_hourly_output > 0 || efficiency.daily_output_estimate > 0) && (
-                          <p className="text-xs text-indigo-300 mb-2">
-                            {efficiency.predicted_hourly_output > 0 ? `~${efficiency.predicted_hourly_output} pcs/hr` : ''}
-                            {efficiency.daily_output_estimate > 0 ? ` · ${efficiency.daily_output_estimate} pcs/day` : ''}
-                          </p>
-                        )}
-                        <p className="text-xs text-indigo-400 italic mb-2 leading-relaxed">{efficiency.explanation}</p>
-                        {efficiency.efficiency_percent != null && (
-                          <div className="mt-2">
-                            <MiniGauge
-                              value={efficiency.efficiency_percent}
-                              max={120}
-                              color={efficiency.status === 'good' ? '#10b981' : efficiency.status === 'warning' ? '#f59e0b' : '#ef4444'}
-                            />
-                            <div className="flex justify-between text-xs text-indigo-400 mt-1">
-                              <span>0%</span>
-                              <span>Confidence: {efficiency.confidence ?? '—'}%</span>
-                              <span>120%</span>
-                            </div>
+                        <p className="text-xs text-indigo-300">
+                          ~{efficiency.predicted_hourly_output} units/hr · {efficiency.daily_output_estimate} units/day
+                        </p>
+                        <div className="mt-3">
+                          <MiniGauge
+                            value={efficiency.efficiency_percent}
+                            max={100}
+                            color={efficiency.status === 'good' ? '#10b981' : efficiency.status === 'warning' ? '#f59e0b' : '#ef4444'}
+                          />
+                          <div className="flex justify-between text-xs text-indigo-400 mt-1">
+                            <span>0%</span>
+                            <span>Confidence: {efficiency.confidence}%</span>
+                            <span>100%</span>
                           </div>
-                        )}
+                        </div>
                       </>
                     ) : (
-                      <p className="text-indigo-400 text-sm mt-2">No production data yet</p>
+                      <p className="text-indigo-400 text-sm">No data</p>
                     )}
                   </div>
                 </div>

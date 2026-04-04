@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getJob,
@@ -7,11 +7,9 @@ import {
   getAssignLinesMeta,
   assignLines,
   createWashingTransfer,
-  getRecipeForProduct,
 } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import JobAIPanel from '../components/JobAIPanel';
-import RecipeEditorModal from '../components/RecipeEditorModal';
 
 const CAN_SEND_CUTTING = 'FABRIC_ISSUED';
 const CAN_ASSIGN_LINES = 'CUTTING_COMPLETED';
@@ -95,7 +93,6 @@ export default function JobDetail() {
   const [actionModal, setActionModal] = useState(null);
   const [confirmSendCutting, setConfirmSendCutting] = useState(false);
   const [washingForm, setWashingForm] = useState({ quantitySent: '', sentFrom: '' });
-  const [assignRecipeModal, setAssignRecipeModal] = useState({ open: false, productId: null, label: '' });
 
   const { data: job, isLoading, error } = useQuery({
     queryKey: ['job', jobId],
@@ -106,11 +103,6 @@ export default function JobDetail() {
     queryKey: ['assign-meta', jobId],
     queryFn: () => getAssignLinesMeta(jobId).then((r) => r.data),
     enabled: !!jobId && job?.status === CAN_ASSIGN_LINES,
-  });
-  const { data: assignRecipe } = useQuery({
-    queryKey: ['recipe', assignForm.productId],
-    queryFn: () => getRecipeForProduct(assignForm.productId).then((r) => r.data),
-    enabled: !!assignForm.productId && (assignForm.showForm || actionModal === 'assign'),
   });
 
   const sendCuttingMutation = useMutation({
@@ -174,7 +166,7 @@ export default function JobDetail() {
 
   const canSendToCutting = job.status === CAN_SEND_CUTTING;
   const canAssignLines = job.status === CAN_ASSIGN_LINES;
-  const canSendToWashing = ['LINE_ASSIGNED', 'LINE_IN_PROGRESS', 'LINE_COMPLETED', 'WASHING_OUT'].includes(job.status);
+  const canSendToWashing = ['LINE_IN_PROGRESS', 'LINE_COMPLETED', 'WASHING_OUT'].includes(job.status);
   const totalCutPieces = job.totalCutPieces ?? 0;
   const totalAssigned = (assignForm.assignments || []).reduce((s, a) => s + (a.assignedQuantity || 0), 0);
   const assignValid = totalAssigned === totalCutPieces && totalCutPieces > 0 && assignForm.productId;
@@ -355,43 +347,6 @@ export default function JobDetail() {
           </dl>
         </CollapsibleCard>
 
-        {job.productId && (
-          <div className="lg:col-span-2">
-            <CollapsibleCard
-              title="Product recipe (accessories per piece)"
-              icon="bi-journal-richtext"
-              defaultOpen
-            >
-              {job.recipe?.lines?.length ? (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-slate-500 text-left">
-                      <th className="pb-1">Material</th>
-                      <th className="pb-1">Type</th>
-                      <th className="pb-1">Qty / good piece</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {job.recipe.lines.map((l) => (
-                      <tr key={l._id || l.materialId?._id} className="border-t border-slate-100">
-                        <td className="py-1">{l.materialId?.name || '—'}</td>
-                        <td className="py-1 capitalize">{l.materialId?.type || '—'}</td>
-                        <td className="py-1 font-medium">{l.quantityPerUnit} {l.materialId?.unit || ''}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-slate-500 text-sm">
-                  No recipe for <strong>{job.productId?.name || 'this product'}</strong>.{' '}
-                  <Link to="/manufacturing/product-recipe" className="text-indigo-600 hover:underline">Add recipe</Link>
-                </p>
-              )}
-              {job.recipe?.note && <p className="text-xs text-slate-500 mt-2 italic">{job.recipe.note}</p>}
-            </CollapsibleCard>
-          </div>
-        )}
-
         <CollapsibleCard
           title="Line Production Summary"
           icon="bi-list-task"
@@ -401,21 +356,11 @@ export default function JobDetail() {
           {(job.lineAssignments && job.lineAssignments.length > 0) ? (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-500 text-left">
-                  <th className="pb-1">Line</th>
-                  <th className="pb-1">Assigned Qty</th>
-                  <th className="pb-1">Produced So Far</th>
-                  <th className="pb-1">Remaining</th>
-                </tr>
+                <tr className="text-slate-500 text-left"><th className="pb-1">Line</th><th className="pb-1">Qty</th></tr>
               </thead>
               <tbody>
                 {(job.lineAssignments || []).map((la) => (
-                  <tr key={la._id} className="border-t border-slate-100">
-                    <td className="py-0.5">{la.lineName}</td>
-                    <td className="py-0.5">{la.assignedQuantity ?? '—'}</td>
-                    <td className="py-0.5">{la.producedQty ?? 0}</td>
-                    <td className="py-0.5">{la.remainingQty == null ? '—' : la.remainingQty}</td>
-                  </tr>
+                  <tr key={la._id}><td className="py-0.5">{la.lineName}</td><td>{la.assignedQuantity}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -476,39 +421,6 @@ export default function JobDetail() {
                     <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
                 </select>
-                {assignForm.productId && (
-                  <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900 space-y-2">
-                    <p className="font-semibold flex items-center gap-1">
-                      <i className="bi bi-journal-text" /> Product recipe (per finished piece)
-                    </p>
-                    {assignRecipe?.lines?.length ? (
-                      <ul className="list-disc list-inside space-y-0.5 text-violet-800">
-                        {assignRecipe.lines.map((l) => (
-                          <li key={l._id || l.materialId?._id || l.materialId}>
-                            {l.materialId?.name || 'Material'} — <strong>{l.quantityPerUnit}</strong> {l.materialId?.unit || 'pcs'} / pc
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-violet-700">No recipe yet for this product.</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const p = (meta?.products || []).find((x) => String(x._id) === String(assignForm.productId));
-                        setAssignRecipeModal({
-                          open: true,
-                          productId: assignForm.productId,
-                          label: p?.name || '',
-                        });
-                      }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-lg"
-                    >
-                      <i className="bi bi-journal-plus" />
-                      {assignRecipe?.lines?.length ? 'Edit recipe' : 'Add recipe'}
-                    </button>
-                  </div>
-                )}
               </div>
               {(assignForm.assignments || []).map((a, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
@@ -545,17 +457,6 @@ export default function JobDetail() {
           </div>
         </div>
       )}
-
-      <RecipeEditorModal
-        open={assignRecipeModal.open}
-        onClose={() => setAssignRecipeModal({ open: false, productId: null, label: '' })}
-        lockProductId={assignRecipeModal.productId}
-        lockProductLabel={assignRecipeModal.label || undefined}
-        onAfterSave={() => {
-          queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-          queryClient.invalidateQueries({ queryKey: ['recipe', assignForm.productId] });
-        }}
-      />
 
       {/* Send to washing modal */}
       {actionModal === 'washing-send' && canSendToWashing && (

@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { listHourlyJobs, saveHourlyProduction, getEmployees, getSections, getHourlyRecords, completeLineProduction } from '../api/client';
+import { useSearchParams } from 'react-router-dom';
+import { listHourlyJobs, saveHourlyProduction, getEmployees, getSections, getHourlyRecords } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 - 20:00
 
 export default function HourlyProduction() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [confirmComplete, setConfirmComplete] = useState(false);
 
   const preselectedJobId = searchParams.get('jobId');
 
@@ -111,16 +109,6 @@ export default function HourlyProduction() {
     },
   });
 
-  const completeLineMutation = useMutation({
-    mutationFn: (jobId) => completeLineProduction(jobId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hourly-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      setConfirmComplete(false);
-      setSelectedJob(null);
-    },
-  });
-
   const openHourModal = (hour) => {
     if (!selectedJobId || !selectedLineName) return;
     if (lockedHours.has(hour)) return;
@@ -184,7 +172,7 @@ export default function HourlyProduction() {
               <option value="">— Select —</option>
               {(jobs || []).map((j) => (
                 <option key={j._id} value={j._id}>
-                  {j.jobNumber} ({j.status}) - Rem {j.remainingQty == null ? '—' : j.remainingQty}
+                  {j.jobNumber} ({j.status})
                 </option>
               ))}
             </select>
@@ -195,50 +183,6 @@ export default function HourlyProduction() {
               <p className="text-sm text-slate-600">
                 Job: {selectedJob.jobNumber} <StatusBadge status={selectedJob.status} />
               </p>
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-slate-600 flex flex-wrap gap-4">
-                  <span><span className="font-medium">Cut:</span> {selectedJob.totalCutPieces ?? '—'}</span>
-                  <span>
-                    <span className="font-medium">Produced:</span>{' '}
-                    <span className="text-indigo-700 font-semibold">{selectedJob.producedQty ?? 0}</span>
-                  </span>
-                  <span>
-                    <span className="font-medium">Remaining:</span>{' '}
-                    {selectedJob.remainingQty == null ? (
-                      <span className="text-slate-400">—</span>
-                    ) : selectedJob.remainingQty === 0 ? (
-                      <span className="text-emerald-600 font-semibold">All Done!</span>
-                    ) : (
-                      <span className="text-amber-700 font-semibold">{selectedJob.remainingQty}</span>
-                    )}
-                  </span>
-                </div>
-                {['LINE_ASSIGNED', 'LINE_IN_PROGRESS', 'LINE_COMPLETED', 'WASHING_OUT'].includes(selectedJob.status) && selectedJob.remainingQty > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmComplete(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                  >
-                    <i className="bi bi-check2-all" /> Mark Line Production Completed
-                  </button>
-                )}
-                {['LINE_COMPLETED', 'WASHING_OUT'].includes(selectedJob.status) && (
-                  <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 text-sm">
-                    <i className="bi bi-check-circle-fill" />
-                    <span className="font-medium">
-                      {selectedJob.status === 'WASHING_OUT' ? 'Washing in Progress' : 'Line Production Completed'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/jobs/${selectedJob._id}`)}
-                      className="ml-2 text-xs text-indigo-700 hover:underline"
-                    >
-                      {selectedJob.status === 'WASHING_OUT' ? 'View Job →' : 'Send to Washing →'}
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <div className="flex flex-wrap gap-3 items-end">
                 <div>
@@ -383,49 +327,6 @@ export default function HourlyProduction() {
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50"
               >
                 Save & lock
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Line Production Complete modal */}
-      {confirmComplete && selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                <i className="bi bi-check2-all text-emerald-600 text-lg" />
-              </div>
-              <h3 className="font-semibold text-slate-800">Mark Line Production Completed?</h3>
-            </div>
-            <p className="text-slate-600 text-sm mb-2">
-              Job <strong>{selectedJob.jobNumber}</strong> will move to <strong>LINE_COMPLETED</strong> status.
-            </p>
-            <p className="text-slate-500 text-sm mb-4">
-              Produced so far: <strong>{selectedJob.producedQty ?? 0}</strong> pcs.
-              After this, you can send the produced pieces to Washing.
-            </p>
-            {completeLineMutation.isError && (
-              <p className="text-red-600 text-sm mb-3 bg-red-50 px-3 py-2 rounded-lg">
-                {completeLineMutation.error?.response?.data?.error || completeLineMutation.error?.message}
-              </p>
-            )}
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setConfirmComplete(false)}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={completeLineMutation.isPending}
-                onClick={() => completeLineMutation.mutate(selectedJob._id)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
-              >
-                {completeLineMutation.isPending ? 'Completing...' : 'Yes, Mark Complete'}
               </button>
             </div>
           </div>

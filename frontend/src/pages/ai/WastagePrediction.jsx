@@ -6,18 +6,16 @@ const FABRIC_TYPES = ['cotton', 'polyester', 'denim', 'silk', 'blended'];
 const COMPLEXITIES = ['low', 'medium', 'high'];
 
 function RiskBadge({ level }) {
-  if (!level) return null;
   const map = {
     low: 'bg-emerald-100 text-emerald-700 border-emerald-200',
     medium: 'bg-amber-100 text-amber-700 border-amber-200',
     high: 'bg-red-100 text-red-700 border-red-200',
   };
   const icon = { low: 'bi-check-circle', medium: 'bi-exclamation-circle', high: 'bi-x-circle' };
-  const label = { low: 'LOW RISK', medium: 'MEDIUM RISK', high: 'HIGH RISK' };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${map[level] || map.medium}`}>
+    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${map[level] || map.medium}`}>
       <i className={`bi ${icon[level] || 'bi-dash'}`} />
-      {label[level] || level.toUpperCase() + ' RISK'}
+      {level?.toUpperCase()} RISK
     </span>
   );
 }
@@ -30,10 +28,9 @@ export default function WastagePrediction() {
     issued_fabric_qty: '',
   });
 
-  const { mutate, data: _raw, isPending, isError, error } = useMutation({
+  const { mutate, data: result, isPending, isError, error } = useMutation({
     mutationFn: predictWastage,
   });
-  const result = _raw?.data ?? _raw;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -129,15 +126,8 @@ export default function WastagePrediction() {
                 id="wastage-issued-qty"
                 type="number"
                 min="0"
-                max="99999"
-                step="0.01"
                 value={form.issued_fabric_qty}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (v === '' || (Number(v) >= 0 && Number(v) <= 99999)) {
-                    setForm(f => ({ ...f, issued_fabric_qty: v }));
-                  }
-                }}
+                onChange={e => setForm(f => ({ ...f, issued_fabric_qty: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm"
                 placeholder="e.g. 500"
               />
@@ -184,26 +174,20 @@ export default function WastagePrediction() {
                 </div>
 
                 <div className="text-center my-6">
-                  {result.wastage_percent != null ? (
-                    <div
-                      className="text-6xl font-black mb-1"
-                      style={{ color: wastageColor }}
-                    >
-                      {result.wastage_percent}
-                      <span className="text-3xl">%</span>
-                    </div>
-                  ) : (
-                    <div className="text-2xl font-semibold text-slate-400 mb-1">Calculating…</div>
-                  )}
+                  <div
+                    className="text-6xl font-black mb-1"
+                    style={{ color: wastageColor }}
+                  >
+                    {result.wastage_percent}%
+                  </div>
                   <p className="text-slate-600 font-medium">Predicted Fabric Wastage</p>
                 </div>
 
-                {result.fabric_loss_estimate != null && result.fabric_loss_estimate > 0 && result.fabric_loss_estimate < 100000 && (
+                {result.fabric_loss_estimate && (
                   <div className="bg-slate-50 rounded-xl px-4 py-3 text-center">
                     <p className="text-sm text-slate-500">Estimated Fabric Loss</p>
                     <p className="text-2xl font-bold text-slate-800 mt-1">
-                      {Number(result.fabric_loss_estimate).toLocaleString('en-US', { maximumFractionDigits: 2 })}{' '}
-                      <span className="text-base font-normal">yards/kg</span>
+                      {result.fabric_loss_estimate} <span className="text-base font-normal">yards/kg</span>
                     </p>
                   </div>
                 )}
@@ -224,16 +208,6 @@ export default function WastagePrediction() {
                 <div className="bg-indigo-50 rounded-xl p-3">
                   <i className="bi bi-robot text-indigo-500 mr-2" />
                   <span className="text-sm text-indigo-800">{result.explanation}</span>
-                </div>
-                <div className={`flex items-center gap-2 mt-2 text-xs rounded-lg px-3 py-2 border ${
-                  result._source === 'real_production_data'
-                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                    : 'text-slate-500 bg-slate-50 border-slate-200'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${result._source === 'real_production_data' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                  {result._source === 'real_production_data'
-                    ? 'Calibrated from real cutting records in the system'
-                    : 'Rule-based model (add cutting records for higher accuracy)'}
                 </div>
               </div>
 

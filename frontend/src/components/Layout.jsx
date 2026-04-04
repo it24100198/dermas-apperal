@@ -18,16 +18,12 @@ const manufacturingItems = [
   { to: '/manufacturing/washing', label: 'Washing gatepass', icon: 'bi-droplet' },
   { to: '/manufacturing/qc', label: 'QC Checking', icon: 'bi-clipboard-check' },
   { to: '/manufacturing/final', label: 'Final Checking', icon: 'bi-patch-check-fill' },
-  { to: '/manufacturing/product-recipe', label: 'Product recipe', icon: 'bi-journal-richtext' },
 ];
 
-const productItems = [
-  { to: '/products',                label: 'All Products',    icon: 'bi-grid-3x3-gap-fill' },
-  { to: '/products/add',          label: 'Add Product',     icon: 'bi-plus-square' },
-  { to: '/products/barcode-print', label: 'Barcode print',  icon: 'bi-printer-fill' },
-  { to: '/products/categories',   label: 'Categories',      icon: 'bi-tags' },
-  { to: '/products/brands',       label: 'Brands',          icon: 'bi-award' },
-  { to: '/products/units',        label: 'Units',           icon: 'bi-rulers' },
+const orderTrackingItems = [
+  { to: '/orders/dashboard', label: 'Dashboard', icon: 'bi-speedometer' },
+  { to: '/orders', label: 'All Orders', icon: 'bi-cart3' },
+  { to: '/orders/report', label: 'Report', icon: 'bi-graph-up-arrow' },
 ];
 
 const expenseItems = [
@@ -60,6 +56,7 @@ const salesItems = [
   { to: '/sales/quotations', label: 'Quotations',           icon: 'bi-file-earmark-text' },
   { to: '/sales/orders',     label: 'Sales Orders',         icon: 'bi-bag-check' },
   { to: '/sales/invoices',   label: 'Invoices',             icon: 'bi-receipt' },
+  { to: '/sales/delivery',   label: 'Delivery & Dispatch',  icon: 'bi-truck' },
   { to: '/sales/returns',    label: 'Sales Returns (RMA)',  icon: 'bi-arrow-return-left' },
   { to: '/sales/analytics',  label: 'Sales Analytics',      icon: 'bi-graph-up-arrow' },
 ];
@@ -76,12 +73,12 @@ const aiItems = [
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [manufacturingOpen, setManufacturingOpen] = useState(true);
+  const [orderTrackingOpen, setOrderTrackingOpen] = useState(true);
   const [expenseOpen, setExpenseOpen] = useState(true);
   const [stockOpen, setStockOpen] = useState(true);
   const [purchaseOpen, setPurchaseOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(true);
-  const [productOpen, setProductOpen] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -397,32 +394,32 @@ export default function Layout() {
             </NavLink>
           )}
 
-          {/* Product Management section */}
+          {/* Order Tracking section */}
           <div className="px-3 mt-5 mb-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
-            {sidebarOpen && 'Product Management'}
+            {sidebarOpen && 'Order Tracking'}
           </div>
           {sidebarOpen ? (
             <>
               <button
-                onClick={() => setProductOpen(!productOpen)}
+                onClick={() => setOrderTrackingOpen(!orderTrackingOpen)}
                 className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg mx-2 mb-1 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors group"
               >
                 <span className="flex items-center gap-3">
-                  <i className="bi bi-grid-3x3-gap-fill text-lg shrink-0 w-6 text-center group-hover:text-slate-200" />
-                  <span className="font-medium">Products</span>
+                  <i className="bi bi-truck text-lg shrink-0 w-6 text-center group-hover:text-slate-200" />
+                  <span className="font-medium">Order Tracking</span>
                 </span>
-                <i className={`bi bi-chevron-down shrink-0 text-slate-400 transition-transform duration-200 ${productOpen ? 'rotate-180' : ''}`} />
+                <i className={`bi bi-chevron-down shrink-0 text-slate-400 transition-transform duration-200 ${orderTrackingOpen ? 'rotate-180' : ''}`} />
               </button>
-              {productOpen && (
+              {orderTrackingOpen && (
                 <div className="ml-2 pl-3 border-l border-slate-600 space-y-0.5">
-                  {productItems.map((item) => (
+                  {orderTrackingItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
-                      end={item.to === '/products'}
+                      end={item.to === '/orders'}
                       className={({ isActive }) =>
                         `flex items-center gap-3 pl-3 pr-3 py-2 rounded-lg mx-2 text-sm transition-colors border-l-2 -ml-px ${isActive
-                          ? 'bg-slate-600 text-white border-violet-400'
+                          ? 'bg-slate-600 text-white border-emerald-400'
                           : 'text-slate-300 hover:bg-slate-700 hover:text-white border-transparent'
                         }`
                       }
@@ -436,12 +433,12 @@ export default function Layout() {
             </>
           ) : (
             <NavLink
-              to="/products"
+              to="/orders/dashboard"
               className={({ isActive }) =>
                 `flex items-center justify-center py-2.5 rounded-lg mx-2 mb-1 ${isActive ? 'bg-slate-600' : 'text-slate-300 hover:bg-slate-700'}`
               }
             >
-              <i className="bi bi-grid-3x3-gap-fill text-xl" />
+              <i className="bi bi-truck text-xl" />
             </NavLink>
           )}
 
