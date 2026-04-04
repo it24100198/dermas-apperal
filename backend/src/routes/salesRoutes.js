@@ -2,7 +2,6 @@ import { Router } from 'express';
 import Quotation from '../models/Quotation.js';
 import SalesOrder from '../models/SalesOrder.js';
 import Invoice from '../models/Invoice.js';
-import DeliveryOrder from '../models/DeliveryOrder.js';
 import SalesReturn from '../models/SalesReturn.js';
 import MaterialCatalog from '../models/MaterialCatalog.js';
 import StockMovement from '../models/StockMovement.js';
@@ -192,53 +191,6 @@ router.get('/invoices/aging', async (req, res, next) => {
       else buckets.over60.push(inv);
     });
     res.json(buckets);
-  } catch (err) { next(err); }
-});
-
-// ════════════════════════════════════════════════
-// DELIVERY ORDERS
-// ════════════════════════════════════════════════
-
-router.get('/delivery', async (req, res, next) => {
-  try {
-    const filter = {};
-    if (req.query.status) filter.status = req.query.status;
-    const dos = await DeliveryOrder.find(filter)
-      .populate('salesOrder', 'orderNumber totalAmount')
-      .sort({ createdAt: -1 });
-    res.json(dos);
-  } catch (err) { next(err); }
-});
-
-router.post('/delivery', async (req, res, next) => {
-  try {
-    const dOrder = await DeliveryOrder.create(req.body);
-    // Update linked SO status to dispatched when DO is created
-    if (req.body.salesOrder) {
-      await SalesOrder.findByIdAndUpdate(req.body.salesOrder, { status: 'dispatched' });
-    }
-    res.status(201).json(dOrder);
-  } catch (err) { next(err); }
-});
-
-router.put('/delivery/:id', async (req, res, next) => {
-  try {
-    const dOrder = await DeliveryOrder.findById(req.params.id);
-    if (!dOrder) return res.status(404).json({ error: 'Delivery Order not found' });
-    Object.assign(dOrder, req.body);
-    await dOrder.save();
-    // Sync SO status
-    if (req.body.status === 'delivered' && dOrder.salesOrder) {
-      await SalesOrder.findByIdAndUpdate(dOrder.salesOrder, { status: 'delivered' });
-    }
-    res.json(dOrder);
-  } catch (err) { next(err); }
-});
-
-router.delete('/delivery/:id', async (req, res, next) => {
-  try {
-    await DeliveryOrder.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
   } catch (err) { next(err); }
 });
 

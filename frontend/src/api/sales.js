@@ -24,12 +24,6 @@ export const recordPayment    = (id, d) => axios.post(`${S}/invoices/${id}/payme
 export const createCreditNote = (id, d) => axios.post(`${S}/invoices/${id}/credit-note`, d).then(r => r.data);
 export const getAgingReport   = () => axios.get(`${S}/invoices/aging`).then(r => r.data);
 
-// ── Delivery Orders ────────────────────────────
-export const getDeliveryOrders  = (p) => axios.get(`${S}/delivery`, { params: p }).then(r => r.data);
-export const createDeliveryOrder= (d) => axios.post(`${S}/delivery`, d).then(r => r.data);
-export const updateDeliveryOrder= (id, d) => axios.put(`${S}/delivery/${id}`, d).then(r => r.data);
-export const deleteDeliveryOrder= (id) => axios.delete(`${S}/delivery/${id}`).then(r => r.data);
-
 // ── Sales Returns ──────────────────────────────
 export const getSalesReturns   = (p) => axios.get(`${S}/returns`, { params: p }).then(r => r.data);
 export const createSalesReturn = (d) => axios.post(`${S}/returns`, d).then(r => r.data);

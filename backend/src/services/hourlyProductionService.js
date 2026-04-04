@@ -1,30 +1,86 @@
 import { ManufacturingJob, HourlyProduction, JobLineAssignment } from '../models/index.js';
 import { JOB_STATUS } from '../utils/statusMachine.js';
 
+const HOURLY_ELIGIBLE_STATUSES = [
+  JOB_STATUS.LINE_ASSIGNED,
+  JOB_STATUS.LINE_IN_PROGRESS,
+  JOB_STATUS.LINE_COMPLETED,
+  JOB_STATUS.WASHING_OUT,
+  JOB_STATUS.AFTER_WASH_RECEIVED,
+  JOB_STATUS.PACKING_COMPLETED,
+];
+
 export async function listJobsForHourlyProduction(userEmployee) {
-  const query = { status: { $in: [JOB_STATUS.LINE_ASSIGNED, JOB_STATUS.LINE_IN_PROGRESS] } };
+  const query = { status: { $in: HOURLY_ELIGIBLE_STATUSES } };
+  let restrictToLineName = null;
+
   if (userEmployee?.productionSectionId && userEmployee.role === 'line_supervisor') {
     const section = userEmployee.productionSectionId;
     const lineName = section?.name || section?.slug;
-    if (lineName) {
-      const jobsWithLine = await ManufacturingJob.find(query)
-        .populate('productId', 'name sku')
-        .lean();
-      const lineAssignments = await JobLineAssignment.find({ lineName }).distinct('jobId');
-      return jobsWithLine.filter((j) => lineAssignments.some((id) => id.equals(j._id)));
-    }
+    if (lineName) restrictToLineName = lineName;
   }
-  return ManufacturingJob.find(query)
+
+  let jobs = await ManufacturingJob.find(query)
     .populate('productId', 'name sku')
-    .sort({ updatedAt: -1 })
     .lean();
+
+  // Restrict visible jobs for line supervisor (only jobs that have this line assigned)
+  if (restrictToLineName) {
+    const jobIdsForLine = await JobLineAssignment.find({ lineName: restrictToLineName }).distinct('jobId');
+    jobs = jobs.filter((j) => jobIdsForLine.some((id) => id.equals(j._id)));
+  } else {
+    jobs = jobs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }
+
+  if (!jobs.length) return jobs;
+
+  // Attach producedQty / remainingQty for the visible jobs
+  const jobIds = jobs.map((j) => j._id);
+  if (restrictToLineName) {
+    const [producedAgg, assignedAgg] = await Promise.all([
+      HourlyProduction.aggregate([
+        { $match: { jobId: { $in: jobIds }, lineName: restrictToLineName } },
+        { $group: { _id: '$jobId', totalQty: { $sum: '$quantity' } } },
+      ]),
+      JobLineAssignment.aggregate([
+        { $match: { jobId: { $in: jobIds }, lineName: restrictToLineName } },
+        { $group: { _id: '$jobId', totalAssigned: { $sum: '$assignedQuantity' } } },
+      ]),
+    ]);
+
+    const producedMap = new Map(producedAgg.map((a) => [String(a._id), a.totalQty || 0]));
+    const assignedMap = new Map(assignedAgg.map((a) => [String(a._id), a.totalAssigned || 0]));
+
+    return jobs.map((job) => {
+      const producedQty = producedMap.get(String(job._id)) ?? 0;
+      const assignedQty = assignedMap.get(String(job._id)) ?? 0;
+      return {
+        ...job,
+        producedQty,
+        remainingQty: Math.max(0, assignedQty - producedQty),
+      };
+    });
+  }
+
+  const producedAgg = await HourlyProduction.aggregate([
+    { $match: { jobId: { $in: jobIds } } },
+    { $group: { _id: '$jobId', totalQty: { $sum: '$quantity' } } },
+  ]);
+
+  const producedMap = new Map(producedAgg.map((a) => [String(a._id), a.totalQty || 0]));
+
+  return jobs.map((job) => {
+    const producedQty = producedMap.get(String(job._id)) ?? 0;
+    const remainingQty = job.totalCutPieces == null ? null : Math.max(0, job.totalCutPieces - producedQty);
+    return { ...job, producedQty, remainingQty };
+  });
 }
 
 export async function saveHourlyProduction(data) {
   const job = await ManufacturingJob.findById(data.jobId);
   if (!job) throw new Error('Job not found');
-  if (![JOB_STATUS.LINE_ASSIGNED, JOB_STATUS.LINE_IN_PROGRESS].includes(job.status)) {
-    throw new Error('Job must be LINE_ASSIGNED or LINE_IN_PROGRESS to record hourly production');
+  if (!HOURLY_ELIGIBLE_STATUSES.includes(job.status)) {
+    throw new Error('Job must be in LINE_ASSIGNED, LINE_IN_PROGRESS, LINE_COMPLETED or WASHING_OUT to record hourly production');
   }
 
   // Lock rule: once any record exists for (jobId + lineName + productionDate + hour),
@@ -83,11 +139,19 @@ export async function saveHourlyProduction(data) {
       quantity: r.quantity,
     })),
   );
-  if (job.status === JOB_STATUS.LINE_ASSIGNED) {
-    job.status = JOB_STATUS.LINE_IN_PROGRESS;
-    await job.save();
-  }
+  // Do NOT auto-change status — job stays LINE_ASSIGNED until manually marked complete
   return { ok: true };
+}
+
+export async function completeLineProduction(jobId) {
+  const job = await ManufacturingJob.findById(jobId);
+  if (!job) throw new Error('Job not found');
+  if (!HOURLY_ELIGIBLE_STATUSES.includes(job.status)) {
+    throw new Error('Job must be in LINE_ASSIGNED, LINE_IN_PROGRESS, LINE_COMPLETED or WASHING_OUT to mark as completed');
+  }
+  job.status = JOB_STATUS.LINE_COMPLETED;
+  await job.save();
+  return { ok: true, status: job.status };
 }
 
 export async function getHourlyRecords(jobId, userEmployee) {

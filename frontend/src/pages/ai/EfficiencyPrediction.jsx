@@ -4,16 +4,18 @@ import { predictEfficiency } from '../../api/ai';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
 
 function StatusBadge({ status }) {
+  if (!status) return null;
   const map = {
     good: 'bg-emerald-100 text-emerald-700 border-emerald-200',
     warning: 'bg-amber-100 text-amber-700 border-amber-200',
     risk: 'bg-red-100 text-red-700 border-red-200',
   };
   const icons = { good: 'bi-check-circle-fill', warning: 'bi-exclamation-circle-fill', risk: 'bi-x-circle-fill' };
+  const labels = { good: 'ON TARGET', warning: 'WARNING', risk: 'AT RISK' };
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${map[status] || map.warning}`}>
-      <i className={`bi ${icons[status]}`} />
-      {status === 'good' ? 'ON TARGET' : status === 'warning' ? 'WARNING' : 'AT RISK'}
+      <i className={`bi ${icons[status] || 'bi-dash'}`} />
+      {labels[status] || status.toUpperCase()}
     </span>
   );
 }
@@ -27,9 +29,10 @@ export default function EfficiencyPrediction() {
     line_name: 'Line 1',
   });
 
-  const { mutate, data: result, isPending, isError } = useMutation({
+  const { mutate, data: _raw, isPending, isError } = useMutation({
     mutationFn: predictEfficiency,
   });
+  const result = _raw?.data ?? _raw;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -209,6 +212,12 @@ export default function EfficiencyPrediction() {
                   <i className="bi bi-robot text-indigo-500 mr-2" />
                   <span className="text-sm text-indigo-800">{result.explanation}</span>
                 </div>
+                {result._source === 'real_production_data' && (
+                  <div className="flex items-center gap-2 mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    Calculated from real production records in the system
+                  </div>
+                )}
               </div>
             </>
           ) : (

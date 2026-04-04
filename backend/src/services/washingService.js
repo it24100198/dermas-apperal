@@ -71,12 +71,13 @@ export async function createTransfer(data, session = null) {
     const job = await ManufacturingJob.findById(data.jobId).session(session);
     if (!job) throw new Error('Job not found');
     const allowedJobStatuses = [
+      JOB_STATUS.LINE_ASSIGNED,
       JOB_STATUS.LINE_IN_PROGRESS,
       JOB_STATUS.LINE_COMPLETED,
       JOB_STATUS.WASHING_OUT,
     ];
     if (!allowedJobStatuses.includes(job.status)) {
-      throw new Error('Job must be LINE_IN_PROGRESS, LINE_COMPLETED, or WASHING_OUT to send washing transfer');
+      throw new Error('Job must be LINE_ASSIGNED, LINE_IN_PROGRESS, LINE_COMPLETED, or WASHING_OUT to send washing transfer');
     }
     const available = await getAvailableToSend(data.jobId);
     if (data.quantitySent > available) {
@@ -99,9 +100,10 @@ export async function createTransfer(data, session = null) {
   ).then((r) => r[0]);
   if (data.jobId) {
     const job = await ManufacturingJob.findById(data.jobId).session(session);
-    // Keep LINE_IN_PROGRESS jobs as-is to allow continuous hourly entries.
-    // Move LINE_COMPLETED jobs to WASHING_OUT once transfer starts.
-    if (job?.status === JOB_STATUS.LINE_COMPLETED) {
+    // LINE_ASSIGNED → WASHING_OUT (partial send without hourly entries)
+    // LINE_COMPLETED → WASHING_OUT
+    // LINE_IN_PROGRESS remains as-is (allow more hourly entries and further partial sends)
+    if (job?.status === JOB_STATUS.LINE_COMPLETED || job?.status === JOB_STATUS.LINE_ASSIGNED) {
       await ManufacturingJob.updateOne(
         { _id: data.jobId },
         { $set: { status: JOB_STATUS.WASHING_OUT } },

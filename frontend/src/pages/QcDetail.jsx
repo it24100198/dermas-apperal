@@ -39,6 +39,7 @@ export default function QcDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['qc-detail', transferId] });
       queryClient.invalidateQueries({ queryKey: ['qc-list'] });
+      navigate('/manufacturing/qc');
     },
   });
   const issueAccessoryMutation = useMutation({

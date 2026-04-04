@@ -72,10 +72,18 @@ export default function AIDashboard() {
             ML-powered predictions and smart insights for your factory
           </p>
         </div>
-        <span className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium border border-indigo-200">
-          <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-          AI Engine Active
-        </span>
+        <div className="flex items-center gap-2">
+          {data?._source === 'realtime_db' && (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium border border-emerald-200">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              Live Data
+            </span>
+          )}
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium border border-indigo-200">
+            <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+            AI Engine Active
+          </span>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -88,40 +96,40 @@ export default function AIDashboard() {
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
-            title="Predicted Daily Output"
-            value={(data?.predicted_daily_output || 1840).toLocaleString()}
-            unit="units"
+            title="Est. Daily Output"
+            value={data?.predicted_daily_output > 0 ? data.predicted_daily_output.toLocaleString() : '—'}
+            unit={data?.predicted_daily_output > 0 ? 'pcs' : ''}
             icon="bi-graph-up"
             color="indigo"
-            trend="up"
-            sub="Based on current line data"
+            trend={data?.predicted_daily_output > 0 ? 'up' : 'stable'}
+            sub={data?.predicted_daily_output > 0 ? '7-day daily average (real)' : 'No production data yet'}
           />
           <KpiCard
-            title="Efficiency Score"
-            value={data?.efficiency_score || 78.4}
-            unit="%"
+            title="Efficiency vs Daily Avg"
+            value={data?.efficiency_score != null ? data.efficiency_score : '—'}
+            unit={data?.efficiency_score != null ? '%' : ''}
             icon="bi-speedometer2"
             color="emerald"
-            trend="up"
-            sub="On target (>75%)"
+            trend={data?.efficiency_score == null ? 'stable' : data.efficiency_score >= 80 ? 'up' : data.efficiency_score >= 60 ? 'stable' : 'down'}
+            sub={data?.efficiency_score != null ? 'Today vs 7-day avg (real)' : 'Start entering production data'}
           />
           <KpiCard
-            title="Predicted Wastage"
-            value={data?.wastage_percent || 6.2}
-            unit="%"
+            title="Avg Fabric Wastage"
+            value={data?.wastage_percent != null ? data.wastage_percent : '—'}
+            unit={data?.wastage_percent != null ? '%' : ''}
             icon="bi-recycle"
             color="amber"
-            trend="stable"
-            sub="Medium risk level"
+            trend={data?.wastage_percent == null ? 'stable' : data.wastage_percent < 6 ? 'up' : data.wastage_percent < 10 ? 'stable' : 'down'}
+            sub={data?.wastage_percent != null ? 'From actual cutting records' : 'Complete cutting records to track'}
           />
           <KpiCard
             title="Active Risk Alerts"
-            value={data?.risk_alerts || 3}
+            value={data?.risk_alerts ?? 0}
             unit=""
             icon="bi-exclamation-triangle"
             color="red"
-            trend="down"
-            sub="2 require attention"
+            trend={data?.risk_alerts === 0 ? 'up' : 'down'}
+            sub={data?.risk_alerts === 0 ? 'All systems normal' : 'Auto-detected from real data'}
           />
         </div>
       )}
@@ -132,7 +140,7 @@ export default function AIDashboard() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <i className="bi bi-graph-up-arrow text-indigo-500" />
-            Predicted vs Actual Output
+            Target vs Actual Output (Last 7 Days)
           </h2>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={trendData}>
@@ -151,8 +159,8 @@ export default function AIDashboard() {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Area type="monotone" dataKey="predicted" name="Predicted" stroke="#6366f1" fill="url(#colorPredicted)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="actual" name="Actual" stroke="#10b981" fill="url(#colorActual)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="predicted" name="Target" stroke="#6366f1" fill="url(#colorPredicted)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="actual" name="Actual Output" stroke="#10b981" fill="url(#colorActual)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

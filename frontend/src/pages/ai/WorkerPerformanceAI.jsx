@@ -143,9 +143,13 @@ export default function WorkerPerformanceAI() {
                     <td className="px-4 py-3 text-center"><ScoreBadge score={w.efficiency_score} /></td>
                     <td className="px-4 py-3 text-center font-semibold">{w.avg_hourly_output}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-medium ${w.qc_pass_rate >= 95 ? 'text-emerald-600' : w.qc_pass_rate >= 90 ? 'text-amber-600' : 'text-red-600'}`}>
-                        {w.qc_pass_rate}%
-                      </span>
+                      {w.qc_pass_rate != null ? (
+                        <span className={`font-medium ${w.qc_pass_rate >= 95 ? 'text-emerald-600' : w.qc_pass_rate >= 85 ? 'text-amber-600' : 'text-red-600'}`}>
+                          {w.qc_pass_rate}%
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-xs">No QC data</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-slate-600">{w.shifts_worked}</td>
                     <td className="px-4 py-3 text-center"><TrendIcon trend={w.trend} /></td>

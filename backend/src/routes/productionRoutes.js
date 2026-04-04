@@ -11,5 +11,6 @@ router.use(requireAuth);
 router.get('/hourly', productionController.listHourly);
 router.get('/hourly/:jobId', productionController.getHourlyRecords);
 router.post('/hourly', validate(hourlyProductionSchema), productionController.saveHourly);
+router.post('/hourly/:jobId/complete-line', productionController.completeLine);
 
 export default router;

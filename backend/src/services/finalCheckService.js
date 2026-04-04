@@ -5,6 +5,7 @@ import {
   StockLedger,
   MaterialIssue,
   Material,
+  ProductRecipe,
 } from '../models/index.js';
 import { PACKING_BATCH_STATUS, PACKING_BATCH_TYPE, JOB_STATUS } from '../utils/statusMachine.js';
 import { withTransaction } from '../utils/withTransaction.js';
@@ -83,9 +84,17 @@ export async function getFinalJobDetail(jobId) {
   const costPerPieceGood = totalGoodPcs > 0 ? totalMaterialCost / totalGoodPcs : 0;
   const costPerPieceAll = totalProducedPcs > 0 ? totalMaterialCost / totalProducedPcs : 0;
 
+  let recipe = null;
+  if (job.productId?._id) {
+    recipe = await ProductRecipe.findOne({ productId: job.productId._id })
+      .populate('lines.materialId', 'name type unit stockQty')
+      .lean();
+  }
+
   return {
     job,
     batches,
+    recipe,
     costSummary: {
       materialBreakdown,
       totalMaterialCost,
@@ -126,23 +135,65 @@ export async function finalizeBatch(batchId, userId) {
             quantity: batch.quantity,
             referenceType: 'ManufacturingJob',
             referenceId: job._id,
-            notes: `Final check - good batch`,
+            notes: `Final check - good batch (${batch.quantity} pcs from job ${job.jobNumber || ''})`,
             createdBy: userId,
           },
         ],
         opts
       );
-      await Product.updateOne(
-        { _id: product._id },
-        { $set: { status: 'draft' }, $inc: { stockQty: batch.quantity } },
-        opts
-      );
+      // Increment stock; keep status as-is (don't downgrade active → draft)
+      const updateFields = { $inc: { stockQty: batch.quantity } };
+      if (product.status === 'draft') updateFields.$set = { status: 'active' };
+      await Product.updateOne({ _id: product._id }, updateFields, opts);
+
+      // Auto-consume recipe accessories (per finished good piece × batch qty)
+      const recipe = await ProductRecipe.findOne({ productId: job.productId }).session(session).lean();
+      if (recipe?.lines?.length) {
+        for (const line of recipe.lines) {
+          const need = Number(line.quantityPerUnit) * batch.quantity;
+          if (need <= 0) continue;
+          const mat = await Material.findById(line.materialId).session(session);
+          if (!mat) throw new Error(`Recipe material missing: ${line.materialId}`);
+          if (mat.stockQty < need) {
+            throw new Error(
+              `Insufficient stock for recipe: ${mat.name}. Need ${need} ${mat.unit || 'pcs'}, available ${mat.stockQty}. Add stock or adjust recipe.`
+            );
+          }
+        }
+        for (const line of recipe.lines) {
+          const need = Number(line.quantityPerUnit) * batch.quantity;
+          if (need <= 0) continue;
+          const matRow = await Material.findById(line.materialId).session(session);
+          const unit = matRow?.unit || 'pcs';
+          await Material.updateOne({ _id: line.materialId }, { $inc: { stockQty: -need } }, opts);
+          await MaterialIssue.create(
+            [
+              {
+                materialId: line.materialId,
+                quantityIssued: need,
+                issuedTo: `Recipe auto — ${batch.quantity} good pcs × ${line.quantityPerUnit} ${unit}/pc (${matRow?.name || 'material'})`,
+                jobId: job._id,
+                packingBatchId: batchId,
+                issuedBy: userId,
+              },
+            ],
+            opts
+          );
+        }
+      }
     } else {
       let damageProduct = await Product.findOne(
-        { classification: 'damage', name: `Damage - ${product.name}` },
+        { linkedGoodProductId: product._id, classification: 'damage' },
         null,
         { session }
       );
+      if (!damageProduct) {
+        damageProduct = await Product.findOne(
+          { classification: 'damage', name: `Damage - ${product.name}` },
+          null,
+          { session }
+        );
+      }
       if (!damageProduct) {
         const [created] = await Product.create(
           [
@@ -150,6 +201,7 @@ export async function finalizeBatch(batchId, userId) {
               name: `Damage - ${product.name}`,
               sku: product.sku ? `DAM-${product.sku}` : undefined,
               classification: 'damage',
+              linkedGoodProductId: product._id,
               status: 'draft',
               stockQty: batch.quantity,
             },
@@ -160,7 +212,10 @@ export async function finalizeBatch(batchId, userId) {
       } else {
         await Product.updateOne(
           { _id: damageProduct._id },
-          { $inc: { stockQty: batch.quantity } },
+          {
+            $inc: { stockQty: batch.quantity },
+            $set: { linkedGoodProductId: product._id },
+          },
           opts
         );
       }

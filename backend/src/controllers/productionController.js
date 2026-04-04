@@ -22,6 +22,15 @@ export async function saveHourly(req, res) {
   }
 }
 
+export async function completeLine(req, res) {
+  try {
+    const result = await hourlyProductionService.completeLineProduction(req.params.jobId);
+    return res.json(result);
+  } catch (err) {
+    return res.status(err?.status || 400).json({ error: err.message });
+  }
+}
+
 export async function getHourlyRecords(req, res) {
   try {
     const employee = await Employee.findOne({ userId: req.user._id })

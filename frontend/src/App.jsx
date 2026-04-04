@@ -11,6 +11,7 @@ import Cutting from './pages/Cutting';
 import Washing from './pages/Washing';
 import QcList from './pages/QcList';
 import QcDetail from './pages/QcDetail';
+import QcJobDetail from './pages/QcJobDetail';
 import FinalList from './pages/FinalList';
 import FinalDetail from './pages/FinalDetail';
 import JobsList from './pages/JobsList';
@@ -22,10 +23,6 @@ import SupervisorDashboard from './pages/SupervisorDashboard';
 import SupervisorLogin from './pages/SupervisorLogin';
 import SupervisorLayout from './components/SupervisorLayout';
 import SectionManagement from './pages/SectionManagement';
-import CustomerOrdersDashboard from './pages/CustomerOrdersDashboard';
-import CustomerOrdersList from './pages/CustomerOrdersList';
-import CustomerOrderDetail from './pages/CustomerOrderDetail';
-import OrderReport from './pages/OrderReport';
 import ExpenseCategories from './pages/ExpenseCategories';
 import ExpenseList from './pages/ExpenseList';
 import RecurringExpenses from './pages/RecurringExpenses';
@@ -45,9 +42,13 @@ import InventoryDashboard from './pages/InventoryDashboard';
 import Quotations from './pages/Quotations';
 import SalesOrders from './pages/SalesOrders';
 import Invoices from './pages/Invoices';
-import DeliveryDispatch from './pages/DeliveryDispatch';
 import SalesReturns from './pages/SalesReturns';
 import SalesAnalytics from './pages/SalesAnalytics';
+import ProductList from './pages/products/ProductList';
+import ProductForm from './pages/products/ProductForm';
+import { ProductCategories, ProductBrands, ProductUnits } from './pages/products/ProductMeta';
+import BarcodePrint from './pages/products/BarcodePrint';
+import ProductRecipe from './pages/ProductRecipe';
 import AIDashboard from './pages/ai/AIDashboard';
 import WastagePrediction from './pages/ai/WastagePrediction';
 import EfficiencyPrediction from './pages/ai/EfficiencyPrediction';
@@ -112,19 +113,15 @@ function AppRoutes() {
         <Route path="manufacturing/line-assignment" element={<LineAssignment />} />
         <Route path="manufacturing/sections" element={<SectionManagement />} />
         <Route path="manufacturing/qc" element={<QcList />} />
+        <Route path="manufacturing/qc/job/:jobId" element={<QcJobDetail />} />
         <Route path="manufacturing/qc/:transferId" element={<QcDetail />} />
         <Route path="manufacturing/final" element={<FinalList />} />
         <Route path="manufacturing/final/:jobId" element={<FinalDetail />} />
+        <Route path="manufacturing/product-recipe" element={<ProductRecipe />} />
         <Route path="jobs" element={<JobsList />} />
         <Route path="jobs/create" element={<JobCreate />} />
         <Route path="jobs/:jobId" element={<ErrorBoundary><JobDetail /></ErrorBoundary>} />
         <Route path="production/hourly" element={<HourlyProduction />} />
-        {/* Order Tracking */}
-        <Route path="orders/dashboard" element={<CustomerOrdersDashboard />} />
-        <Route path="orders" element={<CustomerOrdersList />} />
-        <Route path="orders/new" element={<CustomerOrdersList />} />
-        <Route path="orders/report" element={<OrderReport />} />
-        <Route path="orders/:orderId" element={<CustomerOrderDetail />} />
         {/* Expense & Employee Management */}
         <Route path="expenses/categories" element={<ExpenseCategories />} />
         <Route path="expenses" element={<ExpenseList />} />
@@ -148,9 +145,16 @@ function AppRoutes() {
         <Route path="sales/quotations" element={<Quotations />} />
         <Route path="sales/orders"     element={<SalesOrders />} />
         <Route path="sales/invoices"   element={<Invoices />} />
-        <Route path="sales/delivery"   element={<DeliveryDispatch />} />
         <Route path="sales/returns"    element={<SalesReturns />} />
         <Route path="sales/analytics"  element={<SalesAnalytics />} />
+        {/* Product Management */}
+        <Route path="products" element={<ProductList />} />
+        <Route path="products/add" element={<ProductForm />} />
+        <Route path="products/edit/:id" element={<ProductForm />} />
+        <Route path="products/categories" element={<ProductCategories />} />
+        <Route path="products/brands" element={<ProductBrands />} />
+        <Route path="products/units" element={<ProductUnits />} />
+        <Route path="products/barcode-print" element={<BarcodePrint />} />
         {/* AI Production Intelligence */}
         <Route path="ai/dashboard"          element={<AIDashboard />} />
         <Route path="ai/wastage"             element={<WastagePrediction />} />

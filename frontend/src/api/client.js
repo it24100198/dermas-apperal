@@ -41,11 +41,18 @@ export const completeWashingTransfer = (id) => api.post(`/manufacturing/washing/
 export const listQc = () => api.get('/manufacturing/qc');
 export const getQcDetail = (transferId) => api.get(`/manufacturing/qc/${transferId}`);
 export const saveQc = (transferId, data) => api.post(`/manufacturing/qc/${transferId}`, data);
+export const getJobQcDetail = (jobId) => api.get(`/manufacturing/qc/job/${jobId}`);
+export const saveQcForTransfer = (transferId, data) => api.post(`/manufacturing/qc/transfer/${transferId}`, data);
 export const issueAccessoryToBatch = (batchId, data) => api.post(`/manufacturing/qc/batches/${batchId}/accessories`, data);
 export const sendBatchToFinalCheck = (batchId) => api.post(`/manufacturing/qc/batches/${batchId}/send-to-final`);
 export const listFinalJobs = () => api.get('/manufacturing/final');
 export const getFinalJobDetail = (jobId) => api.get(`/manufacturing/final/${jobId}`);
 export const finalizeBatch = (batchId) => api.post(`/manufacturing/final/batches/${batchId}/finalize`);
+
+export const listProductRecipes = () => api.get('/manufacturing/recipes');
+export const getRecipeForProduct = (productId) => api.get(`/manufacturing/recipes/product/${productId}`);
+export const upsertProductRecipe = (productId, data) => api.put(`/manufacturing/recipes/product/${productId}`, data);
+export const deleteProductRecipe = (productId) => api.delete(`/manufacturing/recipes/product/${productId}`);
 
 // Jobs
 export const listJobs = (params) => api.get('/jobs', { params });
@@ -59,6 +66,7 @@ export const assignLines = (jobId, data) => api.post(`/jobs/${jobId}/assign-line
 export const listHourlyJobs = () => api.get('/production/hourly');
 export const saveHourlyProduction = (data) => api.post('/production/hourly', data);
 export const getHourlyRecords = (jobId) => api.get(`/production/hourly/${jobId}`);
+export const completeLineProduction = (jobId) => api.post(`/production/hourly/${jobId}/complete-line`);
 
 // Supervisor
 export const getSupervisorDashboard = () => api.get('/supervisor/dashboard');
@@ -76,12 +84,27 @@ export const createEmployee = (data) => api.post('/meta/employees', data);
 export const updateEmployee = (id, data) => api.put(`/meta/employees/${id}`, data);
 export const deleteEmployee = (id) => api.delete(`/meta/employees/${id}`);
 
-// Customer Orders
-export const listCustomerOrders = (params) => api.get('/orders', { params });
-export const getCustomerOrder = (id) => api.get(`/orders/${id}`);
-export const createCustomerOrder = (data) => api.post('/orders', data);
-export const updateOrderStatus = (id, data) => api.patch(`/orders/${id}/status`, data);
-export const updateOrderDeliveryDate = (id, data) => api.patch(`/orders/${id}/delivery-date`, data);
-export const getOrderStats = () => api.get('/orders/stats');
-export const deleteCustomerOrder = (id) => api.delete(`/orders/${id}`);
+// ── Manufactured Products ─────────────────────────────────────────────────────
+export const getProductSummary = () => api.get('/products/summary');
+export const listManufacturedProducts = (params) => api.get('/products', { params });
+export const getManufacturedProduct = (id) => api.get(`/products/${id}`);
+export const createManufacturedProduct = (data) => api.post('/products', data);
+export const updateManufacturedProduct = (id, data) => api.put(`/products/${id}`, data);
+export const deleteManufacturedProduct = (id) => api.delete(`/products/${id}`);
+
+// Product Categories / Brands / Units
+export const listProductCategories = () => api.get('/products/meta/categories');
+export const createProductCategory = (data) => api.post('/products/meta/categories', data);
+export const updateProductCategory = (id, data) => api.put(`/products/meta/categories/${id}`, data);
+export const deleteProductCategory = (id) => api.delete(`/products/meta/categories/${id}`);
+
+export const listProductBrands = () => api.get('/products/meta/brands');
+export const createProductBrand = (data) => api.post('/products/meta/brands', data);
+export const updateProductBrand = (id, data) => api.put(`/products/meta/brands/${id}`, data);
+export const deleteProductBrand = (id) => api.delete(`/products/meta/brands/${id}`);
+
+export const listProductUnits = () => api.get('/products/meta/units');
+export const createProductUnit = (data) => api.post('/products/meta/units', data);
+export const updateProductUnit = (id, data) => api.put(`/products/meta/units/${id}`, data);
+export const deleteProductUnit = (id) => api.delete(`/products/meta/units/${id}`);
 

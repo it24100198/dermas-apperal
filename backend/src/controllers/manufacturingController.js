@@ -3,6 +3,7 @@ import * as cuttingService from '../services/cuttingService.js';
 import * as washingService from '../services/washingService.js';
 import * as qcService from '../services/qcService.js';
 import * as finalCheckService from '../services/finalCheckService.js';
+import * as recipeService from '../services/recipeService.js';
 
 export async function getOverview(req, res) {
   try {
@@ -79,10 +80,28 @@ export async function getAvailableToSend(req, res) {
 // QC
 export async function listQc(req, res) {
   try {
-    const transfers = await qcService.listQcTransfers();
-    return res.json(transfers);
+    const jobs = await qcService.listQcJobs();
+    return res.json(jobs);
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getJobQcDetail(req, res) {
+  try {
+    const data = await qcService.getJobQcDetail(req.params.jobId);
+    return res.json(data);
+  } catch (err) {
+    return res.status(404).json({ error: err.message });
+  }
+}
+
+export async function saveQcForTransfer(req, res) {
+  try {
+    const qc = await qcService.saveQcForTransfer(req.params.transferId, req.body, req.user._id);
+    return res.status(201).json(qc);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 }
 
@@ -145,6 +164,41 @@ export async function finalizeBatch(req, res) {
   try {
     const result = await finalCheckService.finalizeBatch(req.params.batchId, req.user._id);
     return res.json(result);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+}
+
+// Product recipes (BOM / accessories per finished piece)
+export async function listRecipes(req, res) {
+  try {
+    return res.json(await recipeService.listRecipes());
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getRecipeForProduct(req, res) {
+  try {
+    const recipe = await recipeService.getRecipeByProductId(req.params.productId);
+    return res.json(recipe || { productId: req.params.productId, lines: [], note: '' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+export async function upsertRecipe(req, res) {
+  try {
+    const recipe = await recipeService.upsertRecipe(req.params.productId, req.body);
+    return res.json(recipe);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+}
+
+export async function deleteRecipe(req, res) {
+  try {
+    return res.json(await recipeService.deleteRecipe(req.params.productId));
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }

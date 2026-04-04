@@ -25,6 +25,9 @@ export default function JobsList() {
               <th className="px-4 py-3">Job #</th>
               <th className="px-4 py-3">Style / Batch</th>
               <th className="px-4 py-3">Fabric issued</th>
+              <th className="px-4 py-3">Cut pieces</th>
+              <th className="px-4 py-3">Produced</th>
+              <th className="px-4 py-3">Remaining</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3">Action</th>
@@ -36,6 +39,9 @@ export default function JobsList() {
                 <td className="px-4 py-3 font-medium">{job.jobNumber}</td>
                 <td className="px-4 py-3">{job.styleRef || '—'} / {job.batchRef || '—'}</td>
                 <td className="px-4 py-3">{job.issuedFabricQuantity}</td>
+                <td className="px-4 py-3">{job.totalCutPieces ?? '—'}</td>
+                <td className="px-4 py-3">{job.producedQty ?? 0}</td>
+                <td className="px-4 py-3">{job.remainingQty == null ? '—' : job.remainingQty}</td>
                 <td className="px-4 py-3"><StatusBadge status={job.status} /></td>
                 <td className="px-4 py-3">{job.productId?.name || '—'}</td>
                 <td className="px-4 py-3">

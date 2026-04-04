@@ -5,6 +5,8 @@ import {
   JobLineAssignment,
   ProductionSection,
   Product,
+  HourlyProduction,
+  ProductRecipe,
 } from '../models/index.js';
 import { getNextJobNumber } from '../utils/jobNumber.js';
 import { assertTransition, JOB_STATUS } from '../utils/statusMachine.js';
@@ -29,6 +31,25 @@ export async function listJobs(filters = {}) {
     .sort({ createdAt: -1 })
     .lean();
 
+  // ── Attach produced/remaining from HourlyProduction ──
+  if (jobs.length) {
+    const jobIds = jobs.map((j) => j._id);
+    const producedAgg = await HourlyProduction.aggregate([
+      { $match: { jobId: { $in: jobIds } } },
+      { $group: { _id: '$jobId', totalQty: { $sum: '$quantity' } } },
+    ]);
+    const producedMap = new Map(producedAgg.map((a) => [String(a._id), a.totalQty || 0]));
+
+    for (const job of jobs) {
+      const producedQty = producedMap.get(String(job._id)) ?? 0;
+      const remainingQty = job.totalCutPieces == null
+        ? null
+        : Math.max(0, job.totalCutPieces - producedQty);
+      job.producedQty = producedQty;
+      job.remainingQty = remainingQty;
+    }
+  }
+
   if (!includeAvailableToSend) return jobs;
 
   const withAvailable = await Promise.all(
@@ -46,11 +67,44 @@ export async function getJob(jobId) {
     .populate('materialIssueId')
     .lean();
   if (!job) throw new Error('Job not found');
-  const [lineAssignments, availableToSend] = await Promise.all([
+  const [lineAssignments, availableToSend, jobProducedAgg, lineProducedAgg] = await Promise.all([
     JobLineAssignment.find({ jobId }).lean(),
     jobId ? washingService.getAvailableToSend(jobId) : Promise.resolve(0),
+    HourlyProduction.aggregate([
+      { $match: { jobId } },
+      { $group: { _id: '$jobId', totalQty: { $sum: '$quantity' } } },
+    ]),
+    HourlyProduction.aggregate([
+      { $match: { jobId } },
+      { $group: { _id: '$lineName', totalQty: { $sum: '$quantity' } } },
+    ]),
   ]);
-  return { ...job, lineAssignments, availableToSend };
+
+  const producedQty = jobProducedAgg[0]?.totalQty ?? 0;
+  const remainingQty = job.totalCutPieces == null
+    ? null
+    : Math.max(0, job.totalCutPieces - producedQty);
+
+  const producedByLineName = new Map((lineProducedAgg || []).map((a) => [a._id, a.totalQty || 0]));
+
+  const enrichedLineAssignments = (lineAssignments || []).map((la) => {
+    const lineProducedQty = producedByLineName.get(la.lineName) ?? 0;
+    const lineRemainingQty = la.assignedQuantity == null
+      ? null
+      : Math.max(0, la.assignedQuantity - lineProducedQty);
+
+    return { ...la, producedQty: lineProducedQty, remainingQty: lineRemainingQty };
+  });
+
+  const pid = job.productId?._id || job.productId;
+  let recipe = null;
+  if (pid) {
+    recipe = await ProductRecipe.findOne({ productId: pid })
+      .populate('lines.materialId', 'name type unit stockQty')
+      .lean();
+  }
+
+  return { ...job, producedQty, remainingQty, lineAssignments: enrichedLineAssignments, availableToSend, recipe };
 }
 
 export async function createJob(data, userId) {
