@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-04-08T12:46:19.911Z",
+  "totals": {
+    "frontendEndpoints": 135,
+    "backendEndpoints": 131,
+    "frontendMissingInBackend": 0,
+    "backendNotUsedByFrontend": 1,
+    "checkedQueryFieldCalls": 7,
+    "checkedBodyFieldCalls": 1,
+    "queryFieldMismatches": 0,
+    "bodyFieldMismatches": 0
+  },
+  "frontendMissingInBackend": [],
+  "backendNotUsedByFrontend": [
+    {
+      "source": "backend/src/routes/diagnosticsRoutes.js",
+      "method": "GET",
+      "path": "/api/diagnostics/contracts",
+      "key": "GET /api/diagnostics/contracts"
+    }
+  ],
+  "queryFieldMismatches": [],
+  "bodyFieldMismatches": [],
+  "uncheckedDynamicCalls": [
+    {
+      "source": "frontend/src/api/client.js",
+      "key": "GET /api/auth/registration-requests/status",
+      "reason": "No Joi contract registry entry for this endpoint"
+    },
+    {
+      "source": "frontend/src/api/client.js",
+      "key": "GET /api/auth/registration-requests",
+      "reason": "No Joi contract registry entry for this endpoint"
+    },
+    {
+      "source": "frontend/src/api/client.js",
+      "key": "POST /api/auth/login",
+      "reason": "No Joi contract registry entry for this endpoint"
+    },
+    {
+      "source": "frontend/src/api/client.js",
+      "key": "POST /api/auth/forgot-password",
+      "reason": "No Joi contract registry entry for this endpoint"
+    },
+    {
+      "source": "frontend/src/api/client.js",
+      "key": "POST /api/auth/reset-password",
+      "reason": "No Joi contract registry entry for this endpoint"
+    },
+    {
+      "source": "frontend/src/api/expenses.js",
+      "key": "GET /api/expenses/summary",
+      "reason": "No Joi contract registry entry for this endpoint"
+    }
+  ]
+}

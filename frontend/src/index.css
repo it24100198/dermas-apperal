@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @import "tailwindcss";
 
 /* ===== Google Fonts ===== */
@@ -63,4 +64,64 @@
 
 .animate-pulse-slow {
   animation: pulse-slow 2s ease-in-out infinite;
+=======
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  height: 100%;
+  background: #f4f8fc;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  height: 100%;
+  overflow: hidden;
+  color: #0f172a;
+  background:
+    radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(191, 219, 254, 0.22), transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* Smooth scrolling throughout */
+* {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.7);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #64748b, #475569);
+}
+
+::selection {
+  background: rgba(14, 165, 233, 0.18);
+  color: #0f172a;
+>>>>>>> 4fdb989 (first commit)
 }
