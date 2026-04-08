@@ -1,0 +1,14 @@
+# Host port defaults to 27018 so this stack does not fight another MongoDB on 27017.
+# Override: MONGO_HOST_PORT=27017 docker compose up -d
+services:
+  mongo:
+    image: mongo:7
+    container_name: manufacturing-erp-mongo
+    ports:
+      - "${MONGO_HOST_PORT:-27018}:27017"
+    volumes:
+      - manufacturing_erp_mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  manufacturing_erp_mongo_data:
