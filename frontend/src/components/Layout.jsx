@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,12 +74,123 @@ const aiItems = [
   { to: '/ai/alerts',            label: 'Alerts',               icon: 'bi-bell' },
 ];
 
+const sampleNotifications = [
+  {
+    id: 'n1',
+    icon: 'bi-receipt-cutoff',
+    title: 'New Expense Added',
+    message: 'Expense claim EXP-1042 was submitted by Accounts.',
+    time: '2m ago',
+    status: 'unread',
+  },
+  {
+    id: 'n2',
+    icon: 'bi-hourglass-split',
+    title: 'Approval Pending',
+    message: 'Travel allowance request requires finance approval.',
+    time: '8m ago',
+    status: 'unread',
+  },
+  {
+    id: 'n3',
+    icon: 'bi-check-circle',
+    title: 'Expense Approved',
+    message: 'Meal reimbursement request EXP-1035 was approved.',
+    time: '21m ago',
+    status: 'read',
+  },
+  {
+    id: 'n4',
+    icon: 'bi-x-circle',
+    title: 'Expense Rejected',
+    message: 'Fuel claim EXP-1031 was rejected due to missing receipt.',
+    time: '34m ago',
+    status: 'unread',
+  },
+  {
+    id: 'n5',
+    icon: 'bi-wallet2',
+    title: 'Reimbursement Submitted',
+    message: 'Reimbursement request was submitted by N. Perera.',
+    time: '48m ago',
+    status: 'unread',
+  },
+  {
+    id: 'n6',
+    icon: 'bi-arrow-repeat',
+    title: 'System Update',
+    message: 'Expense and employee modules were updated successfully.',
+    time: '1h ago',
+    status: 'read',
+  },
+  {
+    id: 'n7',
+    icon: 'bi-person-plus',
+    title: 'New Employee Added',
+    message: 'Employee profile created for Sewing Line Operator.',
+    time: '2h ago',
+    status: 'unread',
+  },
+  {
+    id: 'n8',
+    icon: 'bi-person-gear',
+    title: 'Profile Updated',
+    message: 'Contact details were updated for employee EMP-229.',
+    time: '3h ago',
+    status: 'read',
+  },
+  {
+    id: 'n9',
+    icon: 'bi-calendar-check',
+    title: 'Salary Reminder',
+    message: 'Monthly payroll processing is due tomorrow at 10:00 AM.',
+    time: '5h ago',
+    status: 'unread',
+  },
+  {
+    id: 'n10',
+    icon: 'bi-exclamation-triangle',
+    title: 'Petty Cash Alert',
+    message: 'Petty cash balance dropped below the configured threshold.',
+    time: '7h ago',
+    status: 'unread',
+  },
+];
+
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeModule, setActiveModule] = useState('expense');
   const [aiOpen, setAiOpen] = useState(true);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState(sampleNotifications);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const notificationRef = useRef(null);
+  const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const displayedNotifications = notifications;
+  const isUnread = (item) => (item.status ? item.status === 'unread' : Boolean(item.unread));
+  const unreadCount = displayedNotifications.filter((item) => isUnread(item)).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((item) => ({ ...item, status: 'read' })));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setNotificationOpen(false);
+      }
+
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -499,26 +610,130 @@ export default function Layout() {
               className="w-full px-3 py-2 pl-9 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 focus:bg-white"
             />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 md:gap-3">
             <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" aria-label="Apps">
               <i className="bi bi-grid-3x3-gap text-lg" />
             </button>
-            <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 relative transition-colors" aria-label="Notifications">
-              <i className="bi bi-bell text-lg" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-            </button>
-            <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" aria-label="Settings">
-              <i className="bi bi-gear text-lg" />
-            </button>
-            <div className="flex items-center gap-2 pl-3 ml-1 border-l border-slate-200">
-              <i className="bi bi-person-circle text-slate-500 text-xl" />
-              <span className="text-sm text-slate-600 truncate max-w-[120px]">{user?.name || user?.email}</span>
+            <div className="relative" ref={notificationRef}>
               <button
-                onClick={handleLogout}
-                className="text-sm text-slate-500 hover:text-slate-700 hover:underline"
+                onClick={() => setNotificationOpen((prev) => !prev)}
+                className="h-10 w-10 rounded-xl border border-slate-200 bg-white shadow-sm text-slate-700 inline-flex items-center justify-center relative transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md active:bg-slate-100"
+                aria-label="Notifications for alerts, approvals, and updates"
+                aria-expanded={notificationOpen}
+                title="Alerts, approvals, and updates"
               >
-                Logout
+                <i className="bi bi-bell text-[15px]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-none inline-flex items-center justify-center ring-2 ring-white font-medium">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
+
+              {notificationOpen && (
+                <div className="absolute right-0 mt-2 w-[320px] max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white shadow-xl z-30 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">Notifications</p>
+                      <span className="text-xs text-slate-500">{unreadCount} unread</span>
+                    </div>
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs font-medium text-blue-700 hover:text-blue-800 transition-colors"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {displayedNotifications.map((item) => (
+                      <button
+                        key={item.id}
+                        className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
+                        onClick={() => setNotificationOpen(false)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className={`h-8 w-8 rounded-lg shrink-0 inline-flex items-center justify-center ${isUnread(item) ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                            <i className={`bi ${item.icon || 'bi-bell'} text-sm`} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-700 truncate">{item.title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{item.message}</p>
+                            <div className="mt-1 flex items-center justify-between gap-2">
+                              <p className="text-[11px] text-slate-400">{item.time}</p>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${isUnread(item) ? 'text-blue-700 border-blue-200 bg-blue-50' : 'text-slate-500 border-slate-200 bg-white'}`}>
+                                {isUnread(item) ? 'Unread' : 'Read'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
+                    <button
+                      onClick={() => setNotificationOpen(false)}
+                      className="text-xs font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <button className="h-10 w-10 rounded-xl border border-slate-200 bg-white shadow-sm text-slate-700 inline-flex items-center justify-center transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md active:bg-slate-100" aria-label="System and account settings" title="System and account settings">
+              <i className="bi bi-gear text-[15px]" />
+            </button>
+            <div className="relative pl-2 md:pl-3" ref={profileMenuRef}>
+              <button
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-sm transition-all duration-200"
+                aria-label="Open profile menu"
+                aria-expanded={profileMenuOpen}
+              >
+                <span className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 inline-flex items-center justify-center text-sm font-semibold">
+                  {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
+                </span>
+                <span className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight min-w-0">
+                  <span className="text-sm font-semibold text-slate-700 truncate max-w-[132px]">
+                    {user?.name || user?.email || 'Admin User'}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.08em] text-slate-500">Administrator</span>
+                </span>
+                <i className="bi bi-chevron-down text-[11px] text-slate-500" />
+              </button>
+
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 bg-white shadow-lg py-1 z-20">
+                  <button
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="w-full px-3 py-2 text-sm text-left text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors inline-flex items-center gap-2"
+                  >
+                    <i className="bi bi-person" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      navigate('/account-settings');
+                    }}
+                    className="w-full px-3 py-2 text-sm text-left text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors inline-flex items-center gap-2"
+                  >
+                    <i className="bi bi-gear" />
+                    Account Settings
+                  </button>
+                  <div className="my-1 border-t border-slate-200" />
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full px-3 py-2 text-sm text-left text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors inline-flex items-center gap-2"
+                  >
+                    <i className="bi bi-box-arrow-right" />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
