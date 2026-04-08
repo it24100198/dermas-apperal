@@ -57,7 +57,7 @@ function capitalizeLabel(value) {
 
 function DashboardMetric({ icon, label, value, note, accent }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] backdrop-blur-xl">
+    <div className="rounded-[1.5rem] border border-white/70 bg-white/85 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -76,7 +76,7 @@ function ModuleCard({ module }) {
   return (
     <Link
       to={module.to}
-      className="group rounded-[1.5rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-[0_24px_55px_rgba(15,23,42,0.10)]"
+      className="group rounded-[1.5rem] border border-white/70 bg-white/85 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-sky-200 hover:shadow-[0_28px_65px_rgba(15,23,42,0.13)]"
     >
       <div className="flex h-full flex-col gap-4">
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${module.tone} text-white shadow-lg shadow-slate-200`}>
@@ -297,7 +297,7 @@ export default function Dashboard() {
     activity.push({
       module: 'Expense & Employee',
       title: expense.vendorName || expense.category?.name || 'Expense recorded',
-      detail: `${capitalizeLabel(expense.paymentMethod)} Â· ${formatCurrency(expense.amount)}`,
+      detail: `${capitalizeLabel(expense.paymentMethod)} - ${formatCurrency(expense.amount)}`,
       meta: expense.date ? new Date(expense.date).toLocaleDateString('en-GB') : 'Recent',
       icon: 'bi-receipt',
       tone: 'rose',
@@ -309,7 +309,7 @@ export default function Dashboard() {
     activity.push({
       module: 'Expense & Employee',
       title: 'Pending reimbursement approval',
-      detail: `${claim.employee?.name || claim.claimantName || 'Employee'} Â· ${formatCurrency(claim.amount)}`,
+      detail: `${claim.employee?.name || claim.claimantName || 'Employee'} - ${formatCurrency(claim.amount)}`,
       meta: 'Awaiting action',
       icon: 'bi-person-check',
       tone: 'amber',
@@ -332,7 +332,7 @@ export default function Dashboard() {
     activity.push({
       module: 'Stock Control',
       title: `${Number(data.stockOverview.lowStock || 0)} items need replenishment`,
-      detail: `${Number(data.stockOverview.outOfStock || 0)} items out of stock Â· ${formatCurrency(inventoryValue)} inventory value`,
+      detail: `${Number(data.stockOverview.outOfStock || 0)} items out of stock - ${formatCurrency(inventoryValue)} inventory value`,
       meta: 'Live inventory snapshot',
       icon: 'bi-boxes',
       tone: 'teal',
@@ -344,7 +344,7 @@ export default function Dashboard() {
     activity.push({
       module: 'Order Tracking',
       title: `Order #${order.orderNumber || order._id}`,
-      detail: `${order.customerName || 'Customer'} Â· ${capitalizeLabel(order.status)}`,
+      detail: `${order.customerName || 'Customer'} - ${capitalizeLabel(order.status)}`,
       meta: order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toLocaleDateString('en-GB') : 'Recent',
       icon: 'bi-truck',
       tone: 'sky',
@@ -355,7 +355,7 @@ export default function Dashboard() {
     activity.push({
       module: 'Sales & POS',
       title: 'Revenue and collections updated',
-      detail: `${formatCurrency(salesTotal)} invoiced Â· ${formatCurrency(salesCollected)} collected`,
+      detail: `${formatCurrency(salesTotal)} invoiced - ${formatCurrency(salesCollected)} collected`,
       meta: `${Number(data.salesAnalytics.totalOutstanding || 0) > 0 ? 'Outstanding balances' : 'All collections up to date'}`,
       icon: 'bi-cart-check',
       tone: 'blue',
@@ -423,7 +423,9 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="relative space-y-6 pb-10">
+      <div className="pointer-events-none absolute -top-12 -left-16 h-44 w-44 rounded-full bg-sky-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute top-36 -right-20 h-56 w-56 rounded-full bg-indigo-200/30 blur-3xl" />
       <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
         <div className="relative isolate px-6 py-7 sm:px-8">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.28),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(199,210,254,0.35),_transparent_28%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(240,249,255,0.92))]" />

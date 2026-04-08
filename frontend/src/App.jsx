@@ -33,6 +33,7 @@ import RecurringExpenses from './pages/RecurringExpenses';
 import ReimbursementClaims from './pages/ReimbursementClaims';
 import EmployeeManagement from './pages/EmployeeManagement';
 import AccountRequests from './pages/AccountRequests';
+import AccountSettings from './pages/AccountSettings';
 import SupplierDatabase from './pages/SupplierDatabase';
 import MaterialCatalogPage from './pages/MaterialCatalog';
 import Requisitions from './pages/Requisitions';
@@ -147,6 +148,7 @@ function AppRoutes() {
         <Route path="expenses/reimbursements" element={<ReimbursementClaims />} />
         <Route path="employees" element={<EmployeeManagement />} />
         <Route path="employees/account-requests" element={<AccountRequests />} />
+        <Route path="account-settings" element={<AccountSettings />} />
         {/* Purchase Management */}
         <Route path="purchase/suppliers" element={<SupplierDatabase />} />
         <Route path="purchase/materials" element={<MaterialCatalogPage />} />
