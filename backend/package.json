@@ -1,29 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "Denim inventory management backend API",
-  "main": "index.js",
-  "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
-    "check": "node --check index.js && node --check app.js",
-    "test": "echo \"No tests configured yet\""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "mongoose": "^9.3.2"
-  },
-  "devDependencies": {
-    "mongodb-memory-server": "^11.0.1",
-    "nodemon": "^3.1.14"
-=======
   "name": "manufacturing-erp-backend",
   "version": "1.0.0",
   "description": "Garment/Apparel ERP Manufacturing module API",
@@ -48,6 +23,5 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "nodemailer": "^6.9.14"
->>>>>>> 4fdb989 (first commit)
   }
 }
