@@ -11,9 +11,7 @@ export default function Register() {
     phoneNumber: '',
     password: '',
     confirmPassword: '',
-    requestedDepartment: '',
     reasonForAccess: '',
-    acceptTerms: false,
   });
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -41,8 +39,6 @@ export default function Register() {
     if (!form.confirmPassword) next.confirmPassword = 'Please confirm your password.';
     else if (form.password !== form.confirmPassword) next.confirmPassword = 'Passwords do not match.';
 
-    if (!form.acceptTerms) next.acceptTerms = 'You must accept the Terms and Conditions.';
-
     return next;
   }, [form]);
 
@@ -68,7 +64,6 @@ export default function Register() {
       phoneNumber: true,
       password: true,
       confirmPassword: true,
-      acceptTerms: true,
     });
 
     if (Object.keys(errors).length > 0) return;
@@ -83,9 +78,7 @@ export default function Register() {
         email: form.email.trim(),
         phoneNumber: form.phoneNumber.trim(),
         password: form.password,
-        requestedDepartment: form.requestedDepartment.trim(),
         reasonForAccess: form.reasonForAccess.trim(),
-        acceptTerms: form.acceptTerms,
       });
       setRequestId(String(data?._id || ''));
 
@@ -194,44 +187,16 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="requestedDepartment" className="block text-sm font-medium text-slate-700 mb-2">Requested Department (optional)</label>
-                <input
-                  id="requestedDepartment"
-                  name="requestedDepartment"
-                  value={form.requestedDepartment}
-                  onChange={handleChange}
-                  className={inputClass('requestedDepartment')}
-                  placeholder="Production / Cutting / QC"
-                />
-              </div>
-              <div>
-                <label htmlFor="reasonForAccess" className="block text-sm font-medium text-slate-700 mb-2">Reason for Access (optional)</label>
-                <input
-                  id="reasonForAccess"
-                  name="reasonForAccess"
-                  value={form.reasonForAccess}
-                  onChange={handleChange}
-                  className={inputClass('reasonForAccess')}
-                  placeholder="Brief reason"
-                />
-              </div>
-            </div>
-
             <div>
-              <label className="inline-flex items-start gap-2 text-sm text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="acceptTerms"
-                  checked={form.acceptTerms}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
-                />
-                <span>I agree to the Terms and Conditions.</span>
-              </label>
-              {touched.acceptTerms && errors.acceptTerms && <p className="text-xs text-red-600 mt-1">{errors.acceptTerms}</p>}
+              <label htmlFor="reasonForAccess" className="block text-sm font-medium text-slate-700 mb-2">Reason for Access (optional)</label>
+              <input
+                id="reasonForAccess"
+                name="reasonForAccess"
+                value={form.reasonForAccess}
+                onChange={handleChange}
+                className={inputClass('reasonForAccess')}
+                placeholder="Brief reason"
+              />
             </div>
 
             <button

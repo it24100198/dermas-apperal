@@ -10,9 +10,7 @@ export const registerRequestSchema = Joi.object({
   email: Joi.string().email().required(),
   phoneNumber: Joi.string().trim().min(7).max(25).required(),
   password: Joi.string().min(8).required(),
-  requestedDepartment: Joi.string().trim().max(120).allow('').optional(),
   reasonForAccess: Joi.string().trim().max(500).allow('').optional(),
-  acceptTerms: Joi.boolean().valid(true).required(),
 });
 
 export const approveRegistrationSchema = Joi.object({

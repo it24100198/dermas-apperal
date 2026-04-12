@@ -153,10 +153,6 @@ export default function RequestStatus() {
                   <p className="text-slate-500">Full Name</p>
                   <p className="text-slate-800">{result.fullName}</p>
                 </div>
-                <div>
-                  <p className="text-slate-500">Requested Department</p>
-                  <p className="text-slate-800">{result.requestedDepartment || '—'}</p>
-                </div>
               </div>
 
               {result.status === 'pending' && (
