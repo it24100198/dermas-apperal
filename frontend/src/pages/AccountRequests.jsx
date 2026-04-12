@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   approveRegistrationRequest,
   getRegistrationRequestDetail,
+  getNextEmployeeId,
   getSections,
   listRegistrationRequests,
   rejectRegistrationRequest,
@@ -67,6 +68,34 @@ export default function AccountRequests() {
     queryFn: () => getRegistrationRequestDetail(selectedId).then((res) => res.data),
     enabled: Boolean(selectedId),
   });
+
+  const requestStatus = detailQuery.data?.status || selectedRequest?.status;
+  const nextEmployeeIdQuery = useQuery({
+    queryKey: ['next-employee-id', selectedId],
+    queryFn: () => getNextEmployeeId().then((res) => res.data),
+    enabled: Boolean(selectedId) && requestStatus === 'pending',
+  });
+
+  useEffect(() => {
+    if (!selectedId) {
+      setApproveForm({ employeeId: '', role: 'operator', productionSectionId: '' });
+      setRejectReason('');
+      return;
+    }
+
+    setApproveForm({ employeeId: '', role: 'operator', productionSectionId: '' });
+    setRejectReason('');
+  }, [selectedId]);
+
+  useEffect(() => {
+    const suggested = String(nextEmployeeIdQuery.data?.employeeId || '').trim();
+    if (!suggested) return;
+
+    setApproveForm((prev) => {
+      if (String(prev.employeeId || '').trim()) return prev;
+      return { ...prev, employeeId: suggested };
+    });
+  }, [nextEmployeeIdQuery.data?.employeeId]);
 
   const approveMutation = useMutation({
     mutationFn: ({ id, body }) => approveRegistrationRequest(id, body),
@@ -156,7 +185,6 @@ export default function AccountRequests() {
                   <th className="text-left px-4 py-3">Email</th>
                   <th className="text-left px-4 py-3">Phone Number</th>
                   <th className="text-left px-4 py-3">Requested Date</th>
-                  <th className="text-left px-4 py-3">Requested Department</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Actions</th>
                 </tr>
@@ -169,7 +197,6 @@ export default function AccountRequests() {
                     <td className="px-4 py-3 text-slate-700">{item.email}</td>
                     <td className="px-4 py-3 text-slate-700">{item.phoneNumber}</td>
                     <td className="px-4 py-3 text-slate-700">{formatDate(item.createdAt)}</td>
-                    <td className="px-4 py-3 text-slate-700">{item.requestedDepartment || '—'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs border ${statusBadgeClass[item.status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                         {item.status === 'pending' ? 'Pending Approval' : item.status === 'approved' ? 'Approved' : 'Rejected'}
@@ -218,10 +245,6 @@ export default function AccountRequests() {
                 <p className="text-slate-500">Phone</p>
                 <p className="text-slate-800 font-medium">{detailQuery.data?.phoneNumber || selectedRequest?.phoneNumber}</p>
               </div>
-              <div>
-                <p className="text-slate-500">Requested Department</p>
-                <p className="text-slate-800 font-medium">{detailQuery.data?.requestedDepartment || '—'}</p>
-              </div>
               <div className="md:col-span-2">
                 <p className="text-slate-500">Reason for Access</p>
                 <p className="text-slate-800 font-medium">{detailQuery.data?.reasonForAccess || '—'}</p>
@@ -251,6 +274,12 @@ export default function AccountRequests() {
                     placeholder="EMP-001"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                   />
+                  {nextEmployeeIdQuery.isLoading && (
+                    <p className="mt-1 text-xs text-slate-500">Generating next employee ID...</p>
+                  )}
+                  {nextEmployeeIdQuery.data?.employeeId && (
+                    <p className="mt-1 text-xs text-slate-500">Suggested: {nextEmployeeIdQuery.data.employeeId}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs text-slate-600 mb-1">Role</label>

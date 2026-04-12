@@ -6,6 +6,13 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     password: { type: String, required: true, select: false },
     name: { type: String, trim: true },
+    phone: { type: String, trim: true, default: '' },
+    profilePhoto: { type: String, trim: true, default: '' },
+    preferences: {
+      emailNotifications: { type: Boolean, default: true },
+      systemAlerts: { type: Boolean, default: true },
+      darkMode: { type: Boolean, default: false },
+    },
     role: { type: String, enum: ['admin', 'supervisor', 'user'], default: 'user' },
     isActive: { type: Boolean, default: true },
   },

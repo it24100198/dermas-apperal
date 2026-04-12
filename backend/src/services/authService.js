@@ -81,7 +81,6 @@ export async function createRegistrationRequest(payload) {
     email: normalizedEmail,
     phoneNumber: String(payload.phoneNumber || '').trim(),
     passwordHash,
-    requestedDepartment: String(payload.requestedDepartment || '').trim(),
     reasonForAccess: String(payload.reasonForAccess || '').trim(),
     status: 'pending',
   });
@@ -94,6 +93,25 @@ export async function createRegistrationRequest(payload) {
     createdAt: request.createdAt,
     message: 'Your registration request will be reviewed by an administrator before account activation.',
   };
+}
+
+export async function getNextEmployeeId() {
+  const employees = await Employee.find({ employeeId: { $exists: true, $ne: '' } })
+    .select('employeeId')
+    .lean();
+
+  let maxNumericId = 0;
+  for (const employee of employees) {
+    const code = String(employee.employeeId || '').trim();
+    const match = /^EMP-(\d+)$/i.exec(code);
+    if (!match) continue;
+    const numeric = Number.parseInt(match[1], 10);
+    if (Number.isFinite(numeric) && numeric > maxNumericId) {
+      maxNumericId = numeric;
+    }
+  }
+
+  return `EMP-${String(maxNumericId + 1).padStart(3, '0')}`;
 }
 
 export async function listRegistrationRequests(status = '') {
@@ -207,7 +225,7 @@ export async function lookupRegistrationRequestStatus(email, requestId) {
     _id: normalizedRequestId,
     email: normalizedEmail,
   })
-    .select('fullName email requestedDepartment status rejectionReason reviewedAt createdAt')
+    .select('fullName email status rejectionReason reviewedAt createdAt')
     .lean();
 
   if (!request) throw new Error('Request not found for provided email and request ID');
@@ -216,7 +234,6 @@ export async function lookupRegistrationRequestStatus(email, requestId) {
     requestId: request._id,
     fullName: request.fullName,
     email: request.email,
-    requestedDepartment: request.requestedDepartment || '',
     status: request.status,
     requestedAt: request.createdAt,
     reviewedAt: request.reviewedAt,

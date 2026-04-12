@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 const getAuthToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
 
@@ -52,6 +52,13 @@ export const listRegistrationRequests = (status) => api.get('/auth/registration-
 export const getRegistrationRequestDetail = (id) => api.get(`/auth/registration-requests/${id}`);
 export const approveRegistrationRequest = (id, data) => api.post(`/auth/registration-requests/${id}/approve`, data);
 export const rejectRegistrationRequest = (id, data) => api.post(`/auth/registration-requests/${id}/reject`, data);
+export const getNextEmployeeId = () => api.get('/account-requests/next-employee-id');
+
+// Account Settings
+export const getAccountSettingsMe = () => api.get('/account-settings/me');
+export const updateAccountSettingsProfile = (data) => api.put('/account-settings/profile', data);
+export const updateAccountSettingsPassword = (data) => api.put('/account-settings/password', data);
+export const updateAccountSettingsPreferences = (data) => api.put('/account-settings/preferences', data);
 
 // Manufacturing
 export const getManufacturingOverview = () => api.get('/manufacturing/overview');

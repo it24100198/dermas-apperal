@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes.js';
+import accountRequestRoutes from './accountRequestRoutes.js';
 import jobRoutes from './jobRoutes.js';
 import manufacturingRoutes from './manufacturingRoutes.js';
 import productionRoutes from './productionRoutes.js';
@@ -13,10 +14,12 @@ import stockRoutes from './stockRoutes.js';
 import salesRoutes from './salesRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import diagnosticsRoutes from './diagnosticsRoutes.js';
+import accountSettingsRoutes from './accountSettingsRoutes.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/account-requests', accountRequestRoutes);
 router.use('/jobs', jobRoutes);
 router.use('/manufacturing', manufacturingRoutes);
 router.use('/production', productionRoutes);
@@ -30,5 +33,6 @@ router.use('/stock', stockRoutes);
 router.use('/sales', salesRoutes);
 router.use('/ai', aiRoutes);
 router.use('/diagnostics', diagnosticsRoutes);
+router.use('/account-settings', accountSettingsRoutes);
 
 export default router;

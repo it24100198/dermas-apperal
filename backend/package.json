@@ -7,6 +7,10 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
+    "test:integration": "npm run test:next-employee-id && npm run test:account-settings && npm run test:account-settings-validation",
+    "test:account-settings": "node tests/accountSettings.integration.test.js",
+    "test:account-settings-validation": "node tests/accountSettings.validation.integration.test.js",
+    "test:next-employee-id": "node tests/nextEmployeeId.integration.test.js",
     "seed": "node src/scripts/seed.js",
     "migrate": "node src/scripts/seed.js",
     "contract:check": "node src/scripts/contract-check.js",

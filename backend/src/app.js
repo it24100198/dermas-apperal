@@ -56,7 +56,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manufacturing_erp')
