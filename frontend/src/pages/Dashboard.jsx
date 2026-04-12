@@ -115,10 +115,10 @@ function ProgressRow({ label, value, note, accent, icon }) {
 
 function MiniStat({ label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/80 px-3 py-3 text-center shadow-sm backdrop-blur-xl">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950">{value}</p>
-      <p className="text-xs text-slate-500">{hint}</p>
+    <div className="rounded-2xl border border-white/80 bg-white/88 px-3.5 py-3.5 shadow-[0_14px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold leading-none tracking-tight text-slate-950">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   );
 }
@@ -426,27 +426,51 @@ export default function Dashboard() {
     <div className="relative space-y-6 pb-10">
       <div className="pointer-events-none absolute -top-12 -left-16 h-44 w-44 rounded-full bg-sky-200/30 blur-3xl" />
       <div className="pointer-events-none absolute top-36 -right-20 h-56 w-56 rounded-full bg-indigo-200/30 blur-3xl" />
-      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-        <div className="relative isolate px-6 py-7 sm:px-8">
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.28),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(199,210,254,0.35),_transparent_28%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(240,249,255,0.92))]" />
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Unified business dashboard
-              </div>
-              <div className="space-y-2">
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Central command center for the full ERP</h1>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  A single premium workspace for Overview, People, Expense & Employee, Purchase Management, Manufacturing, Stock Control, Sales & POS, and Order Tracking.
-                </p>
-              </div>
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/70 shadow-[0_24px_75px_rgba(15,23,42,0.1)] backdrop-blur-xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_15%,rgba(125,211,252,0.26),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(147,197,253,0.22),transparent_28%),linear-gradient(130deg,rgba(255,255,255,0.96),rgba(248,250,252,0.93),rgba(239,246,255,0.94))]" />
+        <div className="pointer-events-none absolute -right-24 -top-14 h-48 w-48 rounded-full bg-sky-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-indigo-200/20 blur-3xl" />
+
+        <div className="relative grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/88 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              UNIFIED BUSINESS DASHBOARD
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[420px]">
+
+            <div className="space-y-3">
+              <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-4xl lg:text-[2.7rem]">
+                Executive command center for Dermas Apparel ERP
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                Monitor operations, approvals, and financial signals from one premium overview designed for fast decision-making.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <Link
+                to="/sales/analytics"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800"
+              >
+                <i className="bi bi-bar-chart-line" />
+                View Reports
+              </Link>
+              <Link
+                to="/expenses"
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white"
+              >
+                <i className="bi bi-receipt" />
+                Manage Expenses
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[1.6rem] border border-white/80 bg-white/64 p-3 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-4">
+            <div className="grid grid-cols-2 gap-3">
               <MiniStat label="Modules" value="8" hint="connected" />
-              <MiniStat label="Open orders" value={String(activeOrders)} hint="in motion" />
-              <MiniStat label="Alerts" value={String(Number(data?.stockOverview?.lowStock || 0) + Number(data?.stockOverview?.outOfStock || 0))} hint="stock risks" />
-              <MiniStat label="Claims" value={String(pendingClaims.length)} hint="pending review" />
+              <MiniStat label="Open Orders" value={String(activeOrders)} hint="in progress" />
+              <MiniStat label="Alerts" value={String(Number(data?.stockOverview?.lowStock || 0) + Number(data?.stockOverview?.outOfStock || 0))} hint="requires review" />
+              <MiniStat label="Claims" value={String(pendingClaims.length)} hint="awaiting action" />
             </div>
           </div>
         </div>

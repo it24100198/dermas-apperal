@@ -64,8 +64,23 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('user');
   };
 
+  const updateUser = (updater) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+
+      if (localStorage.getItem('token')) {
+        localStorage.setItem('user', JSON.stringify(next));
+      } else if (sessionStorage.getItem('token')) {
+        sessionStorage.setItem('user', JSON.stringify(next));
+      }
+
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

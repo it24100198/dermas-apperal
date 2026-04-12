@@ -59,7 +59,10 @@ export async function updateProfile(req, res) {
     const fullName = String(req.body.fullName || '').trim();
     const email = String(req.body.email || '').trim().toLowerCase();
     const phone = String(req.body.phone || '').trim();
-    const profilePhoto = String(req.body.profilePhoto || '').trim();
+    const uploadedPhoto = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : '';
+    const hasProfilePhotoField = Object.prototype.hasOwnProperty.call(req.body, 'profilePhoto');
+    const submittedProfilePhoto = hasProfilePhotoField ? String(req.body.profilePhoto || '').trim() : undefined;
+    const profilePhoto = uploadedPhoto || (hasProfilePhotoField ? submittedProfilePhoto : req.user.profilePhoto || '');
 
     if (!fullName || !email || !phone) {
       return res.status(400).json({ error: 'Full name, email, and phone are required' });

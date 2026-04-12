@@ -56,7 +56,10 @@ export const getNextEmployeeId = () => api.get('/account-requests/next-employee-
 
 // Account Settings
 export const getAccountSettingsMe = () => api.get('/account-settings/me');
-export const updateAccountSettingsProfile = (data) => api.put('/account-settings/profile', data);
+export const updateAccountSettingsProfile = (data) =>
+  data instanceof FormData
+    ? api.put('/account-settings/profile', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+    : api.put('/account-settings/profile', data);
 export const updateAccountSettingsPassword = (data) => api.put('/account-settings/password', data);
 export const updateAccountSettingsPreferences = (data) => api.put('/account-settings/preferences', data);
 

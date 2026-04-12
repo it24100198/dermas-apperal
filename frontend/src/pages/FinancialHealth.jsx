@@ -72,17 +72,20 @@ function InsightItem({ label, value, tone = 'slate' }) {
   );
 }
 
-function ProgressRow({ label, value, note, accent }) {
+function ProgressRow({ label, displayValue, progressValue, note, accent }) {
+  const progress = Number(progressValue);
+  const capped = Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : 0;
+
   return (
-    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-medium text-slate-700">{label}</span>
-        <span className="font-semibold text-slate-900">{value}</span>
+        <span className="font-semibold text-slate-900">{displayValue}</span>
       </div>
-      <div className="h-2 rounded-full bg-slate-200">
-        <div className={`h-2 rounded-full bg-gradient-to-r ${accent}`} style={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }} />
+      <div className="mt-2 h-2 rounded-full bg-slate-200">
+        <div className={`h-2 rounded-full bg-gradient-to-r ${accent}`} style={{ width: `${capped}%` }} />
       </div>
-      <p className="text-xs text-slate-500">{note}</p>
+      <p className="mt-2 text-xs text-slate-500">{note}</p>
     </div>
   );
 }
@@ -328,8 +331,9 @@ export default function FinancialHealth() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="grid items-start gap-6 xl:grid-cols-[1.6fr_1fr] xl:items-start">
+        <div className="self-start space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Financial Overview</p>
@@ -381,35 +385,90 @@ export default function FinancialHealth() {
             )}
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <ProgressRow
-              label="Profit status"
-              value={netProfit >= 0 ? 100 : 28}
+              label="Profit Status"
+              displayValue={netProfit >= 0 ? 'Profit' : 'Loss Detected'}
+              progressValue={netProfit >= 0 ? 100 : 28}
               note={netProfit >= 0 ? 'Profit is positive for the selected year.' : 'Loss detected. Review sales and cost structure.'}
               accent={netProfit >= 0 ? 'from-emerald-500 to-teal-500' : 'from-red-500 to-rose-500'}
             />
             <ProgressRow
-              label="Net margin"
-              value={profitMargin !== null ? Math.max(0, Math.min(100, profitMargin)) : 0}
-              note={profitMargin !== null ? formatPercent(profitMargin) : 'Not available'}
+              label="Net Margin"
+              displayValue={profitMargin !== null ? formatPercent(profitMargin) : 'Not available'}
+              progressValue={profitMargin !== null ? profitMargin : 0}
+              note={profitMargin !== null ? 'Net profit as a share of sales.' : 'Not available'}
               accent="from-sky-500 to-cyan-500"
             />
             <ProgressRow
-              label="Expense to sales"
-              value={expenseShare !== null ? Math.max(0, Math.min(100, expenseShare)) : 0}
-              note={expenseShare !== null ? formatPercent(expenseShare) : 'No sales data'}
+              label="Expense to Sales"
+              displayValue={expenseShare !== null ? formatPercent(expenseShare) : 'Not available'}
+              progressValue={expenseShare !== null ? expenseShare : 0}
+              note={expenseShare !== null ? 'Operating expense ratio against sales.' : 'No sales data'}
               accent="from-rose-500 to-pink-500"
             />
             <ProgressRow
-              label="Raw material ratio"
-              value={rawMaterialRatio !== null ? Math.max(0, Math.min(100, rawMaterialRatio)) : 0}
-              note={rawMaterialRatio !== null ? formatPercent(rawMaterialRatio) : 'No sales data'}
+              label="Raw Material Ratio"
+              displayValue={rawMaterialRatio !== null ? formatPercent(rawMaterialRatio) : 'Not available'}
+              progressValue={rawMaterialRatio !== null ? rawMaterialRatio : 0}
+              note={rawMaterialRatio !== null ? 'Material cost as a share of sales.' : 'No sales data'}
               accent="from-amber-500 to-orange-500"
             />
           </div>
+
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Recent expense activity</p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-950">Latest expense transactions</h3>
+              </div>
+              <button type="button" onClick={() => navigate('/expenses')} className="text-sm font-medium text-slate-700 hover:text-slate-900">
+                View all
+              </button>
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+              {isLoading ? (
+                <div className="p-10 text-center text-slate-400">Loading recent expenses...</div>
+              ) : recentExpenses.length === 0 ? (
+                <div className="p-10 text-center text-slate-400">No expenses found for the selected filters.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">Date</th>
+                      <th className="px-4 py-3 text-left font-medium">Category</th>
+                      <th className="px-4 py-3 text-left font-medium">Amount</th>
+                      <th className="px-4 py-3 text-left font-medium">Payment</th>
+                      <th className="px-4 py-3 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {recentExpenses.map((expense) => (
+                      <tr key={expense._id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                          {expense.date ? new Date(expense.date).toLocaleDateString('en-GB') : '—'}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{expense.category?.name || 'Uncategorized'}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">{formatCurrency(expense.amount)}</td>
+                        <td className="px-4 py-3 text-slate-600 capitalize">{String(expense.paymentMethod || '—').replace('_', ' ')}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                            {expense.isRecurring ? 'Recurring' : 'Recorded'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="self-start space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Key Insights</p>
             <h3 className="mt-1 text-lg font-semibold text-slate-950">Actionable financial signals</h3>
@@ -456,89 +515,38 @@ export default function FinancialHealth() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Recent expense activity</p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-950">Latest expense transactions</h3>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Monthly trend</p>
+            <h3 className="mt-1 text-lg font-semibold text-slate-950">Expense movement and sales context</h3>
+            <div className="mt-4 h-[280px]">
+              {isLoading ? (
+                <div className="flex h-full items-center justify-center rounded-2xl bg-slate-50 text-slate-400">Loading trend chart...</div>
+              ) : !chartHasData ? (
+                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
+                  No monthly data to display.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={expenseSummaryMonthly} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value)} />
+                    <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0' }} />
+                    <Legend />
+                    <Bar dataKey="expenses" name="Operating Expenses" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="rawMaterials" name="Raw Materials" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="sales" name="Sales" fill="#0284c7" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            <button type="button" onClick={() => navigate('/expenses')} className="text-sm font-medium text-slate-700 hover:text-slate-900">
-              View all
-            </button>
-          </div>
 
-          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-            {isLoading ? (
-              <div className="p-10 text-center text-slate-400">Loading recent expenses...</div>
-            ) : recentExpenses.length === 0 ? (
-              <div className="p-10 text-center text-slate-400">No expenses found for the selected filters.</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium">Date</th>
-                    <th className="px-4 py-3 text-left font-medium">Category</th>
-                    <th className="px-4 py-3 text-left font-medium">Amount</th>
-                    <th className="px-4 py-3 text-left font-medium">Payment</th>
-                    <th className="px-4 py-3 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentExpenses.map((expense) => (
-                    <tr key={expense._id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                        {expense.date ? new Date(expense.date).toLocaleDateString('en-GB') : '—'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">{expense.category?.name || 'Uncategorized'}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">{formatCurrency(expense.amount)}</td>
-                      <td className="px-4 py-3 text-slate-600 capitalize">{String(expense.paymentMethod || '—').replace('_', ' ')}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                          {expense.isRecurring ? 'Recurring' : 'Recorded'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Monthly trend</p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950">Expense movement and sales context</h3>
-          <div className="mt-4 h-[280px]">
-            {isLoading ? (
-              <div className="flex h-full items-center justify-center rounded-2xl bg-slate-50 text-slate-400">Loading trend chart...</div>
-            ) : !chartHasData ? (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
-                No monthly data to display.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenseSummaryMonthly} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value)} />
-                  <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0' }} />
-                  <Legend />
-                  <Bar dataKey="expenses" name="Operating Expenses" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="rawMaterials" name="Raw Materials" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="sales" name="Sales" fill="#0284c7" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <InsightItem label="Selected filters" value={`${year} · ${month ? MONTHS[Number(month) - 1] : 'All months'} · ${category ? 'Category filtered' : 'All categories'}`} />
-            <InsightItem label="Trend note" value={selectedExpenseTrend} tone="blue" />
-            <InsightItem label="Sales availability" value={totalSales > 0 ? 'Sales data exists' : 'No sales data'} tone={totalSales > 0 ? 'teal' : 'red'} />
+            <div className="mt-4 space-y-3">
+              <InsightItem label="Selected filters" value={`${year} · ${month ? MONTHS[Number(month) - 1] : 'All months'} · ${category ? 'Category filtered' : 'All categories'}`} />
+              <InsightItem label="Trend note" value={selectedExpenseTrend} tone="blue" />
+              <InsightItem label="Sales availability" value={totalSales > 0 ? 'Sales data exists' : 'No sales data'} tone={totalSales > 0 ? 'teal' : 'red'} />
+            </div>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationsProvider } from './context/NotificationsContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
@@ -33,7 +34,9 @@ import RecurringExpenses from './pages/RecurringExpenses';
 import ReimbursementClaims from './pages/ReimbursementClaims';
 import EmployeeManagement from './pages/EmployeeManagement';
 import AccountRequests from './pages/AccountRequests';
+import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
+import Notifications from './pages/Notifications';
 import SupplierDatabase from './pages/SupplierDatabase';
 import MaterialCatalogPage from './pages/MaterialCatalog';
 import Requisitions from './pages/Requisitions';
@@ -148,6 +151,8 @@ function AppRoutes() {
         <Route path="expenses/reimbursements" element={<ReimbursementClaims />} />
         <Route path="employees" element={<EmployeeManagement />} />
         <Route path="employees/account-requests" element={<AccountRequests />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="notifications" element={<Notifications />} />
         <Route path="account-settings" element={<AccountSettings />} />
         {/* Purchase Management */}
         <Route path="purchase/suppliers" element={<SupplierDatabase />} />
@@ -187,7 +192,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <NotificationsProvider>
+            <AppRoutes />
+          </NotificationsProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
