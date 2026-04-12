@@ -126,4 +126,4 @@ The backend strictly follows RESTful conventions. Below is a curated list of exp
 | **Backend** | `CLIENT_ORIGIN` | Authorized CORS domains | `http://localhost:5173` |
 
 ---
-*Built with ❤️ for IT24100480 Group Project.*
+*Built with ❤️ for IT24100198 Group Project.*
