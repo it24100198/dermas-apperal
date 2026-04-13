@@ -51,6 +51,41 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// TEMPORARY: Bootstrap admin endpoint - DELETE after deployment
+app.post("/api/bootstrap-admin", async (req, res) => {
+  try {
+    const { Employee } = await import("./src/models/index.js");
+    const bcryptjs = (await import("bcryptjs")).default;
+    
+    const email = 'admin@dermas.local';
+    const password = 'Admin@2026';
+    const pwd = await bcryptjs.hash(password, 10);
+    
+    const user = await Employee.findOneAndUpdate(
+      { email },
+      { 
+        email,
+        firstName: 'Admin',
+        lastName: 'User',
+        password: pwd,
+        isActive: true,
+        employeeId: 'ADM-' + Date.now(),
+        department: 'Administration',
+        role: 'admin'
+      },
+      { upsert: true, new: true }
+    );
+    
+    return res.json({ 
+      success: true,
+      email: 'admin@dermas.local',
+      password: 'Admin@2026'
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Pre-mount auth router so late-loaded routes are still matched before 404 handling.
 app.use("/api/auth", authRouter);
 
