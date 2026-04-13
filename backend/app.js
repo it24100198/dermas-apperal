@@ -46,13 +46,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Load the full ERP route set (including auth) used by the newer backend modules.
-import("./src/routes/index.js")
-  .then(({ default: erpRoutes }) => {
-    app.use("/api", erpRoutes);
+// Load auth routes from the newer backend modules.
+import("./src/routes/authRoutes.js")
+  .then(({ default: authRoutes }) => {
+    app.use("/api/auth", authRoutes);
   })
   .catch((error) => {
-    console.error("Failed to load src routes:", error);
+    console.error("Failed to load auth routes:", error);
   });
 
 app.use(notFoundHandler);
