@@ -1,9 +1,6 @@
 const cors = require("cors");
 const express = require("express");
 
-const productRoutes = require("./routes/productRoutes");
-const transactionRoutes = require("./routes/transactionRoutes");
-const issueRoutes = require("./routes/issueRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
@@ -48,10 +45,6 @@ app.get("/api/health", (req, res) => {
     uptimeSeconds: Math.floor(process.uptime()),
   });
 });
-
-app.use("/api/products", productRoutes);
-app.use("/api/transactions", transactionRoutes);
-app.use("/api/issuances", issueRoutes);
 
 // Load the full ERP route set (including auth) used by the newer backend modules.
 import("./src/routes/index.js")
