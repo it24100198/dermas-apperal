@@ -6,6 +6,7 @@ const getAuthToken = () => localStorage.getItem('token') || sessionStorage.getIt
 
 export const api = axios.create({
   baseURL,
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -20,20 +21,37 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       const reqUrl = String(err.config?.url || '');
+      const currentPath = window.location.pathname || '';
       const isAuthFormRequest =
         reqUrl.includes('/auth/login') ||
         reqUrl.includes('/auth/register-request') ||
         reqUrl.includes('/auth/register') ||
         reqUrl.includes('/auth/forgot-password') ||
-        reqUrl.includes('/auth/reset-password');
+        reqUrl.includes('/auth/reset-password') ||
+        reqUrl.includes('/auth/logout') ||
+        reqUrl.includes('/auth/me');
+
+      const isPublicAuthPath =
+        currentPath === '/login' ||
+        currentPath === '/register' ||
+        currentPath === '/request-status' ||
+        currentPath === '/forgot-password' ||
+        currentPath === '/reset-password' ||
+        currentPath === '/welcome' ||
+        currentPath === '/supervisor/login';
+
       if (isAuthFormRequest) return Promise.reject(err);
 
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
-      const path = window.location.pathname || '';
-      window.location.href = path.startsWith('/supervisor') ? '/supervisor/login' : '/login';
+
+      if (isPublicAuthPath) {
+        return Promise.reject(err);
+      }
+
+      window.location.href = currentPath.startsWith('/supervisor') ? '/supervisor/login' : '/login';
     }
     return Promise.reject(err);
   }
@@ -41,6 +59,7 @@ api.interceptors.response.use(
 
 // Auth
 export const login = (email, password) => api.post('/auth/login', { email, password });
+export const logout = () => api.post('/auth/logout');
 export const register = (payload) => api.post('/auth/register', payload);
 export const submitRegistrationRequest = (payload) => api.post('/auth/register-request', payload);
 export const forgotPassword = (email) => api.post('/auth/forgot-password', { email });
@@ -56,7 +75,15 @@ export const getNextEmployeeId = () => api.get('/account-requests/next-employee-
 
 // Account Settings
 export const getAccountSettingsMe = () => api.get('/account-settings/me');
-export const updateAccountSettingsProfile = (data) => api.put('/account-settings/profile', data);
+export const updateAccountSettingsProfile = (data) => {
+  if (data instanceof FormData) {
+    return api.put('/account-settings/profile', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  }
+
+  return api.put('/account-settings/profile', data);
+};
 export const updateAccountSettingsPassword = (data) => api.put('/account-settings/password', data);
 export const updateAccountSettingsPreferences = (data) => api.put('/account-settings/preferences', data);
 

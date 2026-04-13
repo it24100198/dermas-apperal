@@ -1,11 +1,33 @@
 import * as authService from '../services/authService.js';
 
+function getAuthCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  const maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+    maxAge: maxAgeMs,
+  };
+}
+
+function clearAuthCookie(res) {
+  res.clearCookie('auth_token', {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
+}
+
 export async function login(req, res) {
   try {
     const { user, token } = await authService.login(req.body.email, req.body.password);
-    return res.json({ user, token });
+    res.cookie('auth_token', token, getAuthCookieOptions());
+    return res.json({ user });
   } catch (err) {
-    return res.status(401).json({ error: err.message });
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
 }
 
@@ -23,7 +45,7 @@ export async function createRegistrationRequest(req, res) {
     const request = await authService.createRegistrationRequest(req.body);
     return res.status(201).json(request);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: 'Unable to submit registration request.' });
   }
 }
 
@@ -36,7 +58,7 @@ export async function listRegistrationRequests(req, res) {
     const rows = await authService.listRegistrationRequests(req.query.status);
     return res.json(rows);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Unable to fetch registration requests.' });
   }
 }
 
@@ -45,7 +67,7 @@ export async function getRegistrationRequestDetail(req, res) {
     const request = await authService.getRegistrationRequestDetail(req.params.id);
     return res.json(request);
   } catch (err) {
-    return res.status(404).json({ error: err.message });
+    return res.status(404).json({ error: 'Registration request not found.' });
   }
 }
 
@@ -54,7 +76,7 @@ export async function approveRegistrationRequest(req, res) {
     const request = await authService.approveRegistrationRequest(req.params.id, req.user._id, req.body);
     return res.json(request);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: 'Unable to approve registration request.' });
   }
 }
 
@@ -63,7 +85,7 @@ export async function rejectRegistrationRequest(req, res) {
     const request = await authService.rejectRegistrationRequest(req.params.id, req.user._id, req.body);
     return res.json(request);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: 'Unable to reject registration request.' });
   }
 }
 
@@ -72,10 +94,7 @@ export async function lookupRegistrationRequestStatus(req, res) {
     const result = await authService.lookupRegistrationRequestStatus(req.query.email, req.query.requestId);
     return res.json(result);
   } catch (err) {
-    if (err.message === 'Invalid request ID') {
-      return res.status(400).json({ error: err.message });
-    }
-    return res.status(404).json({ error: err.message });
+    return res.status(404).json({ error: 'Unable to find request status for provided details.' });
   }
 }
 
@@ -84,7 +103,7 @@ export async function forgotPassword(req, res) {
     const result = await authService.forgotPassword(req.body.email);
     return res.json(result);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.json({ message: 'If an account with this email exists, a password reset link has been sent.' });
   }
 }
 
@@ -93,6 +112,11 @@ export async function resetPassword(req, res) {
     const result = await authService.resetPassword(req.body.token, req.body.newPassword);
     return res.json(result);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: 'Unable to reset password with provided token.' });
   }
+}
+
+export async function logout(req, res) {
+  clearAuthCookie(res);
+  return res.json({ message: 'Signed out successfully.' });
 }

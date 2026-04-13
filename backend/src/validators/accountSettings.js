@@ -6,7 +6,18 @@ export const updateAccountProfileSchema = Joi.object({
   fullName: Joi.string().trim().min(2).max(120).required(),
   email: Joi.string().email().required(),
   phone: Joi.string().trim().pattern(phonePattern).required(),
-  profilePhoto: Joi.string().trim().allow('').uri({ scheme: ['http', 'https'] }).optional(),
+  address: Joi.string().trim().allow('').max(500).optional(),
+  dateOfBirth: Joi.date().iso().allow('', null).optional(),
+  profilePhoto: Joi.string()
+    .trim()
+    .allow('')
+    .custom((value, helpers) => {
+      if (!value) return value;
+      if (/^https?:\/\//i.test(value)) return value;
+      if (/^data:image\/(jpeg|png);base64,/i.test(value)) return value;
+      return helpers.error('string.uri');
+    }, 'profile photo uri or data url validation')
+    .optional(),
 });
 
 export const updateAccountPasswordSchema = Joi.object({

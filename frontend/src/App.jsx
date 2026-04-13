@@ -34,6 +34,8 @@ import ReimbursementClaims from './pages/ReimbursementClaims';
 import EmployeeManagement from './pages/EmployeeManagement';
 import AccountRequests from './pages/AccountRequests';
 import AccountSettings from './pages/AccountSettings';
+import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
 import SupplierDatabase from './pages/SupplierDatabase';
 import MaterialCatalogPage from './pages/MaterialCatalog';
 import Requisitions from './pages/Requisitions';
@@ -70,16 +72,31 @@ const queryClient = new QueryClient({
   },
 });
 
+function AuthLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700">
+      Loading...
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return <AuthLoadingFallback />;
   if (!user) return <Navigate to="/welcome" replace />;
+  return children;
+}
+
+function PublicRoute({ children, redirectTo = '/' }) {
+  const { user, loading } = useAuth();
+  if (loading) return <AuthLoadingFallback />;
+  if (user) return <Navigate to={redirectTo} replace />;
   return children;
 }
 
 function SupervisorProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return <AuthLoadingFallback />;
   if (!user) return <Navigate to="/supervisor/login" replace />;
   if (user.role !== 'supervisor' && user.role !== 'admin') {
     return <Navigate to="/login" replace />;
@@ -91,13 +108,13 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/sidebar-demo" element={<SidebarTabsDemo />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/request-status" element={<RequestStatus />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/supervisor/login" element={<SupervisorLogin />} />
+      <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/request-status" element={<PublicRoute><RequestStatus /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+      <Route path="/supervisor/login" element={<PublicRoute><SupervisorLogin /></PublicRoute>} />
       <Route
         path="/supervisor"
         element={
@@ -148,6 +165,8 @@ function AppRoutes() {
         <Route path="expenses/reimbursements" element={<ReimbursementClaims />} />
         <Route path="employees" element={<EmployeeManagement />} />
         <Route path="employees/account-requests" element={<AccountRequests />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="notifications" element={<Notifications />} />
         <Route path="account-settings" element={<AccountSettings />} />
         {/* Purchase Management */}
         <Route path="purchase/suppliers" element={<SupplierDatabase />} />

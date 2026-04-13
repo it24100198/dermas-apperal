@@ -33,22 +33,15 @@ export async function login(email, password) {
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
   if (!user) {
-    const latestRequest = await RegistrationRequest.findOne({ email: normalizedEmail })
-      .sort({ createdAt: -1 })
-      .lean();
-    if (latestRequest?.status === 'pending') {
-      throw new Error('Your account request is still under review.');
-    }
-    if (latestRequest?.status === 'rejected') {
-      throw new Error('Your request was declined. Please contact the administrator.');
-    }
     throw new Error('Invalid email or password');
   }
 
-  if (!user.isActive) throw new Error('Your account is inactive. Please contact the administrator.');
+  if (!user.isActive) throw new Error('Invalid email or password');
 
   const valid = await user.comparePassword(password);
   if (!valid) throw new Error('Invalid email or password');
+  user.lastLoginAt = new Date();
+  await user.save();
   const token = jwt.sign(
     { userId: user._id.toString() },
     process.env.JWT_SECRET,

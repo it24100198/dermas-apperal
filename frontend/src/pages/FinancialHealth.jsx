@@ -72,17 +72,24 @@ function InsightItem({ label, value, tone = 'slate' }) {
   );
 }
 
-function ProgressRow({ label, value, note, accent }) {
+function ProgressRow({ label, value, note, accent, progress }) {
   return (
-    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium text-slate-700">{label}</span>
-        <span className="font-semibold text-slate-900">{value}</span>
+    <div className="flex h-full min-h-[156px] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+          <p className="text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
+        </div>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-sm`}>
+          <i className="bi bi-activity text-lg" />
+        </div>
       </div>
-      <div className="h-2 rounded-full bg-slate-200">
-        <div className={`h-2 rounded-full bg-gradient-to-r ${accent}`} style={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }} />
+      <div className="space-y-2">
+        <div className="h-2 rounded-full bg-slate-100">
+          <div className={`h-2 rounded-full bg-gradient-to-r ${accent}`} style={{ width: `${Math.max(0, Math.min(100, Number(progress) || 0))}%` }} />
+        </div>
+        <p className="text-sm leading-6 text-slate-500">{note}</p>
       </div>
-      <p className="text-xs text-slate-500">{note}</p>
     </div>
   );
 }
@@ -226,6 +233,25 @@ export default function FinancialHealth() {
   const pendingClaimsTotal = pendingClaims.reduce((sum, claim) => sum + Number(claim.amount || 0), 0);
 
   const expenseShare = totalSales > 0 ? (operationalExpenses / totalSales) * 100 : null;
+  const financialSummary = useMemo(() => {
+    if (totalSales <= 0) {
+      return 'Sales data is not available yet, so margin pressure cannot be assessed.';
+    }
+
+    if (netProfit < 0) {
+      if ((expenseShare ?? 0) >= (rawMaterialRatio ?? 0)) {
+        return 'Operating expenses remain the main financial pressure point this period.';
+      }
+
+      return 'Sales recovery is needed to improve margin and reduce cost pressure.';
+    }
+
+    if (profitMargin !== null && profitMargin < 15) {
+      return 'Profit is positive, but margin efficiency can still be improved.';
+    }
+
+    return 'The business is holding a healthy position with room to further strengthen margins.';
+  }, [totalSales, netProfit, expenseShare, rawMaterialRatio, profitMargin]);
 
   const downloadCsv = () => {
     const rows = [
@@ -381,31 +407,42 @@ export default function FinancialHealth() {
             )}
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid auto-rows-fr gap-4 md:grid-cols-2">
             <ProgressRow
               label="Profit status"
-              value={netProfit >= 0 ? 100 : 28}
-              note={netProfit >= 0 ? 'Profit is positive for the selected year.' : 'Loss detected. Review sales and cost structure.'}
+              value={netProfit >= 0 ? 'Profit' : 'Loss'}
+              progress={netProfit >= 0 ? 100 : 28}
+              note={netProfit >= 0 ? 'Positive result after direct and operating costs.' : 'Costs exceed sales for the selected year.'}
               accent={netProfit >= 0 ? 'from-emerald-500 to-teal-500' : 'from-red-500 to-rose-500'}
             />
             <ProgressRow
               label="Net margin"
-              value={profitMargin !== null ? Math.max(0, Math.min(100, profitMargin)) : 0}
-              note={profitMargin !== null ? formatPercent(profitMargin) : 'Not available'}
+              value={profitMargin !== null ? formatPercent(profitMargin) : 'Not available'}
+              progress={profitMargin !== null ? Math.max(0, Math.min(100, profitMargin)) : 0}
+              note={profitMargin !== null ? 'Net profit as a share of sales.' : 'No sales data available.'}
               accent="from-sky-500 to-cyan-500"
             />
             <ProgressRow
               label="Expense to sales"
-              value={expenseShare !== null ? Math.max(0, Math.min(100, expenseShare)) : 0}
-              note={expenseShare !== null ? formatPercent(expenseShare) : 'No sales data'}
+              value={expenseShare !== null ? formatPercent(expenseShare) : 'Not available'}
+              progress={expenseShare !== null ? Math.max(0, Math.min(100, expenseShare)) : 0}
+              note={expenseShare !== null ? 'Operating expenses as a share of sales.' : 'No sales data available.'}
               accent="from-rose-500 to-pink-500"
             />
             <ProgressRow
               label="Raw material ratio"
-              value={rawMaterialRatio !== null ? Math.max(0, Math.min(100, rawMaterialRatio)) : 0}
-              note={rawMaterialRatio !== null ? formatPercent(rawMaterialRatio) : 'No sales data'}
+              value={rawMaterialRatio !== null ? formatPercent(rawMaterialRatio) : 'Not available'}
+              progress={rawMaterialRatio !== null ? Math.max(0, Math.min(100, rawMaterialRatio)) : 0}
+              note={rawMaterialRatio !== null ? 'Material spend as a share of sales.' : 'No sales data available.'}
               accent="from-amber-500 to-orange-500"
             />
+          </div>
+
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm">
+              <i className="bi bi-lightning-charge-fill text-sm" />
+            </div>
+            <p className="text-sm leading-6 text-slate-600">{financialSummary}</p>
           </div>
         </div>
 

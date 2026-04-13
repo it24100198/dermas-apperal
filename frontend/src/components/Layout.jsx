@@ -164,10 +164,18 @@ export default function Layout() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState(sampleNotifications);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const notificationRef = useRef(null);
   const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const displayName = user?.fullName || user?.name || user?.email || 'Admin User';
+  const displayRole = String(user?.role || 'Administrator')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+  const avatarUrl = user?.profilePhoto || '';
+  const avatarInitial = (displayName || 'A').charAt(0).toUpperCase();
 
   const displayedNotifications = notifications;
   const isUnread = (item) => (item.status ? item.status === 'unread' : Boolean(item.unread));
@@ -191,6 +199,10 @@ export default function Layout() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarUrl]);
 
   const handleLogout = () => {
     logout();
@@ -671,7 +683,10 @@ export default function Layout() {
                   </div>
                   <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
                     <button
-                      onClick={() => setNotificationOpen(false)}
+                      onClick={() => {
+                        setNotificationOpen(false);
+                        navigate('/notifications');
+                      }}
                       className="text-xs font-medium text-slate-700 hover:text-slate-900 transition-colors"
                     >
                       View all notifications
@@ -680,7 +695,13 @@ export default function Layout() {
                 </div>
               )}
             </div>
-            <button className="h-10 w-10 rounded-xl border border-slate-200 bg-white shadow-sm text-slate-700 inline-flex items-center justify-center transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md active:bg-slate-100" aria-label="System and account settings" title="System and account settings">
+            <button
+              type="button"
+              onClick={() => navigate('/account-settings')}
+              className="relative z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:translate-y-0 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+              aria-label="Open account settings"
+              title="Open account settings"
+            >
               <i className="bi bi-gear text-[15px]" />
             </button>
             <div className="relative pl-2 md:pl-3" ref={profileMenuRef}>
@@ -690,14 +711,23 @@ export default function Layout() {
                 aria-label="Open profile menu"
                 aria-expanded={profileMenuOpen}
               >
-                <span className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 inline-flex items-center justify-center text-sm font-semibold">
-                  {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
-                </span>
+                {avatarUrl && !avatarLoadFailed ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`${displayName} avatar`}
+                    onError={() => setAvatarLoadFailed(true)}
+                    className="h-9 w-9 rounded-full border border-slate-200 object-cover shadow-sm"
+                  />
+                ) : (
+                  <span className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 inline-flex items-center justify-center text-sm font-semibold">
+                    {avatarInitial}
+                  </span>
+                )}
                 <span className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight min-w-0">
                   <span className="text-sm font-semibold text-slate-700 truncate max-w-[132px]">
-                    {user?.name || user?.email || 'Admin User'}
+                    {displayName}
                   </span>
-                  <span className="text-[10px] uppercase tracking-[0.08em] text-slate-500">Administrator</span>
+                  <span className="text-[10px] uppercase tracking-[0.08em] text-slate-500">{displayRole}</span>
                 </span>
                 <i className="bi bi-chevron-down text-[11px] text-slate-500" />
               </button>
@@ -705,7 +735,10 @@ export default function Layout() {
               {profileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 bg-white shadow-lg py-1 z-20">
                   <button
-                    onClick={() => setProfileMenuOpen(false)}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      navigate('/profile');
+                    }}
                     className="w-full px-3 py-2 text-sm text-left text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors inline-flex items-center gap-2"
                   >
                     <i className="bi bi-person" />

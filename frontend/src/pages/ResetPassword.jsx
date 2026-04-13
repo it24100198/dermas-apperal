@@ -2,6 +2,21 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../api/client';
 
+const WEAK_PASSWORDS = new Set([
+  'password',
+  'password123',
+  '12345678',
+  '123456789',
+  'qwerty123',
+  'admin123',
+  'letmein',
+  'welcome123',
+  'abc12345',
+  'iloveyou',
+  'changeme',
+  'dermas123',
+]);
+
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -20,7 +35,12 @@ export default function ResetPassword() {
     const next = {};
     if (!token) next.token = 'Invalid reset link. Please request a new one.';
     if (!password) next.password = 'New password is required.';
-    else if (password.length < 8) next.password = 'Password must be at least 8 characters.';
+    else if (password.length < 12) next.password = 'Password must be at least 12 characters.';
+    else if (!/[a-z]/.test(password)) next.password = 'Password must include at least one lowercase letter.';
+    else if (!/[A-Z]/.test(password)) next.password = 'Password must include at least one uppercase letter.';
+    else if (!/[0-9]/.test(password)) next.password = 'Password must include at least one number.';
+    else if (!/[^A-Za-z0-9]/.test(password)) next.password = 'Password must include at least one special character.';
+    else if (WEAK_PASSWORDS.has(password.trim().toLowerCase())) next.password = 'Choose a stronger password that is not commonly used.';
     if (!confirmPassword) next.confirmPassword = 'Please confirm your password.';
     else if (password !== confirmPassword) next.confirmPassword = 'Passwords do not match.';
     return next;
@@ -76,7 +96,7 @@ export default function ResetPassword() {
                     ? 'border-red-300 focus:ring-red-200 focus:border-red-400'
                     : 'border-slate-200 focus:ring-amber-400/50 focus:border-amber-400'
                 }`}
-                placeholder="At least 8 characters"
+                placeholder="Min 12 chars with upper/lower/number/symbol"
                 autoComplete="new-password"
               />
               <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 hover:text-slate-700">

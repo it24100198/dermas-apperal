@@ -2,6 +2,21 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api/client';
 
+const WEAK_PASSWORDS = new Set([
+  'password',
+  'password123',
+  '12345678',
+  '123456789',
+  'qwerty123',
+  'admin123',
+  'letmein',
+  'welcome123',
+  'abc12345',
+  'iloveyou',
+  'changeme',
+  'dermas123',
+]);
+
 export default function Register() {
   const navigate = useNavigate();
   const [requestId, setRequestId] = useState('');
@@ -34,7 +49,12 @@ export default function Register() {
     else if (!validatePhone(form.phoneNumber)) next.phoneNumber = 'Enter a valid phone number.';
 
     if (!form.password) next.password = 'Password is required.';
-    else if (form.password.length < 8) next.password = 'Password must be at least 8 characters.';
+    else if (form.password.length < 12) next.password = 'Password must be at least 12 characters.';
+    else if (!/[a-z]/.test(form.password)) next.password = 'Password must include at least one lowercase letter.';
+    else if (!/[A-Z]/.test(form.password)) next.password = 'Password must include at least one uppercase letter.';
+    else if (!/[0-9]/.test(form.password)) next.password = 'Password must include at least one number.';
+    else if (!/[^A-Za-z0-9]/.test(form.password)) next.password = 'Password must include at least one special character.';
+    else if (WEAK_PASSWORDS.has(form.password.trim().toLowerCase())) next.password = 'Choose a stronger password that is not commonly used.';
 
     if (!form.confirmPassword) next.confirmPassword = 'Please confirm your password.';
     else if (form.password !== form.confirmPassword) next.confirmPassword = 'Passwords do not match.';
@@ -156,7 +176,7 @@ export default function Register() {
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">Password</label>
                 <div className="relative">
-                  <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} onBlur={handleBlur} className={`${inputClass('password')} pr-24`} placeholder="At least 8 characters" autoComplete="new-password" />
+                  <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} onBlur={handleBlur} className={`${inputClass('password')} pr-24`} placeholder="Min 12 chars with upper/lower/number/symbol" autoComplete="new-password" />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}

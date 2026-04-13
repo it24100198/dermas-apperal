@@ -4,6 +4,11 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
+	createRateLimiter,
+	keyByIpAndEmail,
+	keyByIpAndRequest,
+} from '../middleware/rateLimit.js';
+import {
 	approveRegistrationSchema,
 	forgotPasswordSchema,
 	loginSchema,
@@ -15,12 +20,41 @@ import {
 
 const router = Router();
 
-router.post('/login', validate(loginSchema), authController.login);
+const loginRateLimit = createRateLimiter({
+	windowMs: 10 * 60 * 1000,
+	max: 8,
+	keyGenerator: keyByIpAndEmail('body'),
+	message: 'Too many login attempts. Please try again in a few minutes.',
+});
+
+const forgotPasswordRateLimit = createRateLimiter({
+	windowMs: 10 * 60 * 1000,
+	max: 5,
+	keyGenerator: keyByIpAndEmail('body'),
+	message: 'Too many reset requests. Please try again shortly.',
+});
+
+const resetPasswordRateLimit = createRateLimiter({
+	windowMs: 10 * 60 * 1000,
+	max: 10,
+	keyGenerator: keyByIpAndEmail('body'),
+	message: 'Too many reset attempts. Please try again shortly.',
+});
+
+const requestStatusRateLimit = createRateLimiter({
+	windowMs: 10 * 60 * 1000,
+	max: 12,
+	keyGenerator: keyByIpAndRequest('query'),
+	message: 'Too many status checks. Please try again shortly.',
+});
+
+router.post('/login', loginRateLimit, validate(loginSchema), authController.login);
 router.post('/register', validate(registerRequestSchema), authController.register);
 router.post('/register-request', validate(registerRequestSchema), authController.createRegistrationRequest);
-router.get('/registration-requests/status', validate(registrationStatusLookupSchema, 'query'), authController.lookupRegistrationRequestStatus);
-router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
-router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+router.get('/registration-requests/status', requestStatusRateLimit, validate(registrationStatusLookupSchema, 'query'), authController.lookupRegistrationRequestStatus);
+router.post('/forgot-password', forgotPasswordRateLimit, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post('/reset-password', resetPasswordRateLimit, validate(resetPasswordSchema), authController.resetPassword);
+router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.me);
 
 router.get('/registration-requests', requireAuth, requireRole('admin'), authController.listRegistrationRequests);

@@ -3,7 +3,9 @@ import { User } from '../models/index.js';
 
 export function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const cookieToken = req.cookies?.auth_token || null;
+  const token = headerToken || cookieToken;
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }

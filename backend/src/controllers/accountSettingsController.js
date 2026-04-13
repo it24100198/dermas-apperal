@@ -41,11 +41,16 @@ export async function getMyAccountSettings(req, res) {
         fullName: req.user.name || employee?.name || '',
         email: req.user.email || '',
         phone: req.user.phone || employee?.phone || '',
+        address: req.user.address || '',
+        dateOfBirth: req.user.dateOfBirth ? new Date(req.user.dateOfBirth).toISOString() : '',
         profilePhoto: req.user.profilePhoto || '',
         employeeId: employee?.employeeId || '',
         role: EMPLOYEE_ROLE_LABELS[employee?.role] || req.user.role || '',
         department,
         designation: EMPLOYEE_ROLE_LABELS[employee?.role] || req.user.role || '',
+        joinedDate: req.user.createdAt ? new Date(req.user.createdAt).toISOString() : '',
+        employmentStatus: req.user.isActive ? 'Active' : 'Inactive',
+        lastLoginAt: req.user.lastLoginAt ? new Date(req.user.lastLoginAt).toISOString() : '',
         preferences: normalizePreferences(req.user.preferences || {}),
       },
     });
@@ -59,7 +64,23 @@ export async function updateProfile(req, res) {
     const fullName = String(req.body.fullName || '').trim();
     const email = String(req.body.email || '').trim().toLowerCase();
     const phone = String(req.body.phone || '').trim();
+    const address = String(req.body.address || '').trim();
+    const dateOfBirthRaw = String(req.body.dateOfBirth || '').trim();
     const profilePhoto = String(req.body.profilePhoto || '').trim();
+    const uploadedFile = req.file;
+
+    const uploadedProfilePhoto = uploadedFile
+      ? `data:${uploadedFile.mimetype};base64,${uploadedFile.buffer.toString('base64')}`
+      : profilePhoto;
+
+    let dateOfBirth = null;
+    if (dateOfBirthRaw) {
+      const parsed = new Date(dateOfBirthRaw);
+      if (Number.isNaN(parsed.getTime())) {
+        return res.status(400).json({ error: 'Please provide a valid date of birth' });
+      }
+      dateOfBirth = parsed;
+    }
 
     if (!fullName || !email || !phone) {
       return res.status(400).json({ error: 'Full name, email, and phone are required' });
@@ -88,7 +109,9 @@ export async function updateProfile(req, res) {
         name: fullName,
         email,
         phone,
-        profilePhoto,
+        address,
+        dateOfBirth,
+        profilePhoto: uploadedProfilePhoto,
       },
       {
         new: true,
@@ -111,6 +134,8 @@ export async function updateProfile(req, res) {
         fullName: updatedUser?.name || '',
         email: updatedUser?.email || '',
         phone: updatedUser?.phone || '',
+        address: updatedUser?.address || '',
+        dateOfBirth: updatedUser?.dateOfBirth ? new Date(updatedUser.dateOfBirth).toISOString() : '',
         profilePhoto: updatedUser?.profilePhoto || '',
       },
     });

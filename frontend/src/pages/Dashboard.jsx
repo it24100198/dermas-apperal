@@ -36,6 +36,7 @@ const MODULES = [
 ];
 
 const EXPENSE_COLORS = ['#0f172a', '#0f766e', '#2563eb', '#7c3aed', '#f97316', '#db2777', '#6b7280'];
+const SUPPLIER_COLORS = ['#0f766e', '#0284c7', '#7c3aed', '#f59e0b', '#ef4444', '#64748b'];
 
 function formatCurrency(value) {
   return `Rs. ${Number(value || 0).toLocaleString('en-LK', { maximumFractionDigits: 0 })}`;
@@ -210,6 +211,24 @@ export default function Dashboard() {
         name: capitalizeLabel(name),
         value,
         fill: EXPENSE_COLORS[index % EXPENSE_COLORS.length],
+      }));
+  }, [data]);
+
+  const supplierSpendData = useMemo(() => {
+    const totals = new Map();
+
+    safeArray(data?.expenses).forEach((expense) => {
+      const supplierName = String(expense.vendorName || expense.supplier?.name || expense.category?.name || 'Unspecified supplier').trim();
+      totals.set(supplierName, (totals.get(supplierName) || 0) + Number(expense.amount || 0));
+    });
+
+    return [...totals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        fill: SUPPLIER_COLORS[index % SUPPLIER_COLORS.length],
       }));
   }, [data]);
 
@@ -477,7 +496,7 @@ export default function Dashboard() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
-        <div className="space-y-6">
+        <div className="flex h-full flex-col gap-6">
           <div className="rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -514,7 +533,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-6">
+            <div className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:min-h-[640px] sm:p-7">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Finance mix</p>
@@ -522,34 +541,75 @@ export default function Dashboard() {
                 </div>
                 <Link to="/expenses" className="text-sm font-medium text-sky-700 hover:text-sky-900">Open expenses</Link>
               </div>
-              <div className="mt-4 h-[230px]">
-                {isLoading ? (
-                  <div className="flex h-full items-center justify-center rounded-[1.5rem] bg-slate-50 text-slate-400">Loading chart...</div>
-                ) : expenseCategoryData.length === 0 ? (
-                  <div className="flex h-full items-center justify-center rounded-[1.5rem] bg-slate-50 text-sm text-slate-400">No expense data yet.</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={expenseCategoryData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={86} paddingAngle={4}>
-                        {expenseCategoryData.map((entry, index) => (
-                          <Cell key={entry.name} fill={entry.fill || EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-              <div className="mt-2 space-y-2">
-                {expenseCategoryData.slice(0, 4).map((entry) => (
-                  <div key={entry.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                      <span className="text-slate-600">{entry.name}</span>
+              <div className="mt-5 space-y-5">
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
+                  <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div className="h-[220px]">
+                      {isLoading ? (
+                        <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading chart...</div>
+                      ) : expenseCategoryData.length === 0 ? (
+                        <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No expense data yet.</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={expenseCategoryData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={86} paddingAngle={4}>
+                              {expenseCategoryData.map((entry, index) => (
+                                <Cell key={entry.name} fill={entry.fill || EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
-                    <span className="font-medium text-slate-900">{formatCurrency(entry.value)}</span>
+                    <div className="space-y-3 sm:min-w-[215px]">
+                      {expenseCategoryData.slice(0, 4).map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between gap-3 text-[13px]">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.fill }} />
+                            <span className="truncate font-medium text-slate-600">{entry.name}</span>
+                          </div>
+                          <span className="font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Spend by Supplier</p>
+                  <div className="mt-4 grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div className="h-[200px]">
+                      {isLoading ? (
+                        <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading supplier spend...</div>
+                      ) : supplierSpendData.length === 0 ? (
+                        <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No supplier spend data yet.</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={supplierSpendData} dataKey="value" nameKey="name" innerRadius={42} outerRadius={76} paddingAngle={3}>
+                              {supplierSpendData.map((entry, index) => (
+                                <Cell key={entry.name} fill={entry.fill || SUPPLIER_COLORS[index % SUPPLIER_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                    <div className="space-y-3 sm:min-w-[215px]">
+                      {supplierSpendData.map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between gap-3 text-[13px]">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.fill }} />
+                            <span className="truncate font-medium text-slate-600">{entry.name}</span>
+                          </div>
+                          <span className="font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -613,26 +673,26 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-6">
+          <div className="flex flex-1 flex-col rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-7">
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="space-y-1.5">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Navigation clarity</p>
                 <h3 className="mt-1 text-lg font-semibold text-slate-950">Direct links for every module</h3>
               </div>
             </div>
-            <div className="mt-4 space-y-2.5">
+            <div className="mt-5 flex-1 space-y-3">
               {MODULES.map((module) => (
                 <Link
                   key={module.label}
                   to={module.to}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 px-3 py-3 transition-colors hover:border-sky-200 hover:bg-white"
+                  className="flex items-center gap-3.5 rounded-2xl border border-slate-200/70 bg-slate-50/80 px-4 py-3.5 transition-colors hover:border-sky-200 hover:bg-white"
                 >
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${module.tone} text-white`}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${module.tone} text-white`}>
                     <i className={`bi ${module.icon}`} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-900">{module.label}</p>
-                    <p className="truncate text-xs text-slate-500">{module.description}</p>
+                    <p className="truncate text-[15px] font-semibold text-slate-900">{module.label}</p>
+                    <p className="truncate text-xs leading-5 text-slate-500">{module.description}</p>
                   </div>
                   <i className="bi bi-chevron-right text-slate-300" />
                 </Link>

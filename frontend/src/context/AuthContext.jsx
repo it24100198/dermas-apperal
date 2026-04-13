@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getMe } from '../api/client';
+import { getMe, logout as apiLogout } from '../api/client';
 
 const AuthContext = createContext(null);
 const getStoredToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -14,19 +14,15 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
-  const [loading, setLoading] = useState(!!getStoredToken());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getStoredToken()) {
-      setLoading(false);
-      return;
-    }
     getMe()
       .then((res) => {
         setUser(res.data);
         if (localStorage.getItem('token')) {
           localStorage.setItem('user', JSON.stringify(res.data));
-        } else {
+        } else if (sessionStorage.getItem('token')) {
           sessionStorage.setItem('user', JSON.stringify(res.data));
         }
       })
@@ -40,8 +36,18 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = (userData, token, remember = true) => {
+  const login = (userData, token = '', remember = true) => {
     setUser(userData);
+    const hasToken = Boolean(String(token || '').trim());
+
+    if (!hasToken) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      return;
+    }
+
     if (remember) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
@@ -57,6 +63,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    apiLogout().catch(() => {});
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -64,8 +71,23 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('user');
   };
 
+  const updateUser = (updater) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+
+      if (localStorage.getItem('token')) {
+        localStorage.setItem('user', JSON.stringify(next));
+      } else if (sessionStorage.getItem('token')) {
+        sessionStorage.setItem('user', JSON.stringify(next));
+      }
+
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

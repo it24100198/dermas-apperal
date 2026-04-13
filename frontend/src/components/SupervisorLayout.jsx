@@ -11,9 +11,9 @@ export default function SupervisorLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#f2f7fc_0%,#ecf3fa_100%)]">
+      <header className="shrink-0 border-b border-slate-300/60 bg-white/90 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <img src="/dermas-logo.png" alt="" className="h-9 w-9 object-contain" />
             <div>
@@ -25,7 +25,7 @@ export default function SupervisorLayout() {
             <NavLink
               to="/supervisor/dashboard"
               className={({ isActive }) =>
-                `px-3 py-2 rounded-lg text-sm font-medium ${isActive ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+                `px-3 py-2 rounded-xl text-sm font-medium transition ${isActive ? 'bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.96),rgba(14,116,144,0.92))] text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`
               }
             >
               Dashboard
@@ -33,7 +33,7 @@ export default function SupervisorLayout() {
             <NavLink
               to="/supervisor/hourly"
               className={({ isActive }) =>
-                `px-3 py-2 rounded-lg text-sm font-medium ${isActive ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+                `px-3 py-2 rounded-xl text-sm font-medium transition ${isActive ? 'bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.96),rgba(14,116,144,0.92))] text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`
               }
             >
               Hourly output
@@ -49,15 +49,17 @@ export default function SupervisorLayout() {
             <button
               type="button"
               onClick={handleLogout}
-              className="px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100"
             >
               Log out
             </button>
           </nav>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <Outlet />
+      <main className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

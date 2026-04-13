@@ -6,8 +6,51 @@ import routes from './routes/index.js';
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+const normalizeOrigin = (origin) => String(origin || '').trim().toLowerCase();
+
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+];
+
+const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = (process.env.NODE_ENV === 'production' ? configuredOrigins : [...defaultDevOrigins, ...configuredOrigins])
+  .map(normalizeOrigin);
+
+app.set('trust proxy', 1);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.includes(normalizeOrigin(origin));
+      if (!isAllowed) return callback(new Error('CORS origin not allowed'));
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const header = String(req.headers.cookie || '');
+  const cookies = {};
+  for (const chunk of header.split(';')) {
+    const [rawKey, ...rest] = chunk.split('=');
+    const key = String(rawKey || '').trim();
+    if (!key) continue;
+    const value = rest.join('=');
+    cookies[key] = decodeURIComponent(value || '');
+  }
+  req.cookies = cookies;
+  next();
+});
 
 app.use((req, res, next) => {
   const startedAt = Date.now();
@@ -53,7 +96,14 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(`[${new Date().toISOString()}] ERROR ${req.method} ${req.originalUrl}`, err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+  const status = Number(err.status || err.statusCode || 500);
+  const safeStatus = status >= 400 && status < 600 ? status : 500;
+
+  if (safeStatus >= 500) {
+    return res.status(safeStatus).json({ error: 'An unexpected error occurred. Please try again later.' });
+  }
+
+  return res.status(safeStatus).json({ error: 'Request could not be processed.' });
 });
 
 const PORT = process.env.PORT || 5001;
