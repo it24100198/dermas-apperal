@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/[[...path]].js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/[[...path]].js"
+    }
+  ]
+}
