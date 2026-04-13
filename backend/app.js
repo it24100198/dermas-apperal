@@ -4,6 +4,8 @@ const express = require("express");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
+let authRoutesLoaded = false;
+let authRoutesError = null;
 
 const allowedOrigins = process.env.CLIENT_ORIGIN
   ? process.env.CLIENT_ORIGIN.split(",").map((origin) => origin.trim())
@@ -43,6 +45,8 @@ app.get("/api/health", (req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
+    authRoutesLoaded,
+    authRoutesError,
   });
 });
 
@@ -50,8 +54,12 @@ app.get("/api/health", (req, res) => {
 import("./src/routes/authRoutes.js")
   .then(({ default: authRoutes }) => {
     app.use("/api/auth", authRoutes);
+    authRoutesLoaded = true;
+    authRoutesError = null;
   })
   .catch((error) => {
+    authRoutesLoaded = false;
+    authRoutesError = error?.message || String(error);
     console.error("Failed to load auth routes:", error);
   });
 
