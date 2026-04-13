@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE = String(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '');
 const P = `${BASE}/purchase`;
 
 const unwrapItems = (data) => (Array.isArray(data) ? data : data?.items || []);

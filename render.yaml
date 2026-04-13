@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: dermas-apperal-backend
+    env: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: AI_SERVICE_URL
+        sync: false

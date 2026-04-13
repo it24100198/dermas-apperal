@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || '/api';
+const baseURL = String(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '');
 
 const getAuthToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
 

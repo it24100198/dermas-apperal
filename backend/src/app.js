@@ -5,6 +5,10 @@ import mongoose from 'mongoose';
 import routes from './routes/index.js';
 
 const app = express();
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manufacturing_erp';
+let databaseConnectionPromise = null;
+
+app.set('trust proxy', 1);
 
 const normalizeOrigin = (origin) => String(origin || '').trim().toLowerCase();
 
@@ -15,15 +19,13 @@ const defaultDevOrigins = [
   'http://127.0.0.1:4173',
 ];
 
-const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
+const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
 const allowedOrigins = (process.env.NODE_ENV === 'production' ? configuredOrigins : [...defaultDevOrigins, ...configuredOrigins])
   .map(normalizeOrigin);
-
-app.set('trust proxy', 1);
 
 app.use(
   cors({
@@ -39,6 +41,17 @@ app.use(
 app.use(express.json());
 
 app.use((req, res, next) => {
+  const startedAt = Date.now();
+
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`);
+  });
+
+  next();
+});
+
+app.use((req, res, next) => {
   const header = String(req.headers.cookie || '');
   const cookies = {};
   for (const chunk of header.split(';')) {
@@ -49,15 +62,6 @@ app.use((req, res, next) => {
     cookies[key] = decodeURIComponent(value || '');
   }
   req.cookies = cookies;
-  next();
-});
-
-app.use((req, res, next) => {
-  const startedAt = Date.now();
-  res.on('finish', () => {
-    const durationMs = Date.now() - startedAt;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`);
-  });
   next();
 });
 
@@ -106,16 +110,47 @@ app.use((err, req, res, next) => {
   return res.status(safeStatus).json({ error: 'Request could not be processed.' });
 });
 
-const PORT = process.env.PORT || 5001;
+export const connectDatabase = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
 
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manufacturing_erp')
-  .then(() => {
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-  })
-  .catch((err) => {
-    console.error('MongoDB connection failed. Backend needs a running database.');
-    console.error('Options: (1) Start local MongoDB, (2) Use Docker: docker run -d -p 27017:27017 mongo, (3) Use MongoDB Atlas and set MONGODB_URI in .env');
-    console.error('Error:', err.message);
-    process.exit(1);
-  });
+  if (!databaseConnectionPromise) {
+    mongoose.set('strictQuery', true);
+
+    databaseConnectionPromise = mongoose
+      .connect(mongoUri, { serverSelectionTimeoutMS: 10000 })
+      .then((connection) => {
+        console.log('Connected to MongoDB');
+        return connection;
+      })
+      .catch((error) => {
+        databaseConnectionPromise = null;
+        throw error;
+      });
+  }
+
+  return databaseConnectionPromise;
+};
+
+export const disconnectDatabase = async () => {
+  databaseConnectionPromise = null;
+  await mongoose.disconnect();
+};
+
+export default app;
+
+if (process.env.RUN_LOCAL_SERVER === 'true') {
+  const PORT = process.env.PORT || 5001;
+
+  connectDatabase()
+    .then(() => {
+      app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+    })
+    .catch((err) => {
+      console.error('MongoDB connection failed. Backend needs a running database.');
+      console.error('Options: (1) Start local MongoDB, (2) Use Docker: docker run -d -p 27017:27017 mongo, (3) Use MongoDB Atlas and set MONGODB_URI in .env');
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+}

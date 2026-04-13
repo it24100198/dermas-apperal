@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE = String(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '');
 const S = `${BASE}/stock`;
 
 export const getStockOverview   = ()       => axios.get(`${S}/overview`).then(r => r.data);
