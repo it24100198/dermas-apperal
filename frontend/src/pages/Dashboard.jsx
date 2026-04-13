@@ -37,6 +37,8 @@ const MODULES = [
 
 const EXPENSE_COLORS = ['#0f172a', '#0f766e', '#2563eb', '#7c3aed', '#f97316', '#db2777', '#6b7280'];
 const SUPPLIER_COLORS = ['#0f766e', '#0284c7', '#7c3aed', '#f59e0b', '#ef4444', '#64748b'];
+const DONUT_INNER_RADIUS = 44;
+const DONUT_OUTER_RADIUS = 72;
 
 function formatCurrency(value) {
   return `Rs. ${Number(value || 0).toLocaleString('en-LK', { maximumFractionDigits: 0 })}`;
@@ -543,33 +545,44 @@ export default function Dashboard() {
               </div>
               <div className="mt-5 space-y-5">
                 <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
-                  <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <div className="h-[220px]">
+                  <div className="space-y-4">
+                    <div className="mx-auto h-[220px] w-full max-w-[320px] overflow-visible">
                       {isLoading ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading chart...</div>
                       ) : expenseCategoryData.length === 0 ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No expense data yet.</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={expenseCategoryData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={86} paddingAngle={4}>
+                        <div className="flex h-full items-center justify-center overflow-visible p-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={expenseCategoryData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={DONUT_INNER_RADIUS}
+                                outerRadius={DONUT_OUTER_RADIUS}
+                                paddingAngle={3}
+                              >
                               {expenseCategoryData.map((entry, index) => (
                                 <Cell key={entry.name} fill={entry.fill || EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
                               ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => formatCurrency(value)} />
-                          </PieChart>
-                        </ResponsiveContainer>
+                              </Pie>
+                              <Tooltip formatter={(value) => formatCurrency(value)} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       )}
                     </div>
-                    <div className="space-y-3 sm:min-w-[215px]">
+                    <div className="space-y-2.5">
                       {expenseCategoryData.slice(0, 4).map((entry) => (
-                        <div key={entry.name} className="flex items-center justify-between gap-3 text-[13px]">
+                        <div key={entry.name} className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2.5 text-[13px] last:border-b-0 last:pb-0">
                           <div className="flex min-w-0 items-center gap-2.5">
                             <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.fill }} />
                             <span className="truncate font-medium text-slate-600">{entry.name}</span>
                           </div>
-                          <span className="font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
+                          <span className="whitespace-nowrap font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
                         </div>
                       ))}
                     </div>
@@ -578,33 +591,44 @@ export default function Dashboard() {
 
                 <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Spend by Supplier</p>
-                  <div className="mt-4 grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <div className="h-[200px]">
+                  <div className="mt-4 space-y-4">
+                    <div className="mx-auto h-[220px] w-full max-w-[320px] overflow-visible">
                       {isLoading ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading supplier spend...</div>
                       ) : supplierSpendData.length === 0 ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No supplier spend data yet.</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={supplierSpendData} dataKey="value" nameKey="name" innerRadius={42} outerRadius={76} paddingAngle={3}>
+                        <div className="flex h-full items-center justify-center overflow-visible p-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={supplierSpendData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={DONUT_INNER_RADIUS}
+                                outerRadius={DONUT_OUTER_RADIUS}
+                                paddingAngle={3}
+                              >
                               {supplierSpendData.map((entry, index) => (
                                 <Cell key={entry.name} fill={entry.fill || SUPPLIER_COLORS[index % SUPPLIER_COLORS.length]} />
                               ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => formatCurrency(value)} />
-                          </PieChart>
-                        </ResponsiveContainer>
+                              </Pie>
+                              <Tooltip formatter={(value) => formatCurrency(value)} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       )}
                     </div>
-                    <div className="space-y-3 sm:min-w-[215px]">
+                    <div className="space-y-2.5">
                       {supplierSpendData.map((entry) => (
-                        <div key={entry.name} className="flex items-center justify-between gap-3 text-[13px]">
+                        <div key={entry.name} className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2.5 text-[13px] last:border-b-0 last:pb-0">
                           <div className="flex min-w-0 items-center gap-2.5">
                             <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.fill }} />
                             <span className="truncate font-medium text-slate-600">{entry.name}</span>
                           </div>
-                          <span className="font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
+                          <span className="whitespace-nowrap font-semibold text-slate-900">{formatCurrency(entry.value)}</span>
                         </div>
                       ))}
                     </div>
