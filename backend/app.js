@@ -4,6 +4,7 @@ const express = require("express");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
+const authRouter = express.Router();
 let authRoutesLoaded = false;
 let authRoutesError = null;
 
@@ -50,10 +51,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Pre-mount auth router so late-loaded routes are still matched before 404 handling.
+app.use("/api/auth", authRouter);
+
 // Load auth routes from the newer backend modules.
 import("./src/routes/authRoutes.js")
   .then(({ default: authRoutes }) => {
-    app.use("/api/auth", authRoutes);
+    authRouter.use(authRoutes);
     authRoutesLoaded = true;
     authRoutesError = null;
   })
