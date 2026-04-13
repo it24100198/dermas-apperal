@@ -57,9 +57,6 @@ router.post('/reset-password', resetPasswordRateLimit, validate(resetPasswordSch
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.me);
 
-// TEMPORARY: Test seed endpoint for E2E verification
-router.post('/test/seed', authController.testSeedUser);
-
 router.get('/registration-requests', requireAuth, requireRole('admin'), authController.listRegistrationRequests);
 router.get('/registration-requests/:id', requireAuth, requireRole('admin'), authController.getRegistrationRequestDetail);
 router.post(

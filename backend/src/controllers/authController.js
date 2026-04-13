@@ -1,6 +1,4 @@
 import * as authService from '../services/authService.js';
-import User from '../models/Employee.js';
-import bcrypt from 'bcrypt';
 
 function getAuthCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -121,43 +119,4 @@ export async function resetPassword(req, res) {
 export async function logout(req, res) {
   clearAuthCookie(res);
   return res.json({ message: 'Signed out successfully.' });
-}
-
-// TEMPORARY: Test seed endpoint for E2E verification
-export async function testSeedUser(req, res) {
-  try {
-    // Simple security: only allow if explicitly called
-    const testEmail = 'e2e.test@verification.local';
-    const testPassword = 'E2ETest#VerifyFlow2026';
-    
-    const passwordHash = await bcrypt.hash(testPassword, 10);
-    
-    let user = await User.findOne({ email: testEmail });
-    if (user) {
-      await User.updateOne({ _id: user._id }, { 
-        passwordHash, 
-        isActive: true,
-        email: testEmail
-      });
-    } else {
-      user = await User.create({
-        email: testEmail,
-        firstName: 'E2E',
-        lastName: 'Verification',
-        passwordHash,
-        isActive: true,
-        employeeId: 'E2E-TEST-' + Date.now(),
-        department: 'Testing',
-        role: 'user'
-      });
-    }
-    
-    return res.json({ 
-      email: testEmail, 
-      password: testPassword,
-      message: 'Test user created (TEMPORARY)'
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
 }
