@@ -4,7 +4,7 @@ const phonePattern = /^\+?[0-9()\-\s]{7,20}$/;
 
 export const updateAccountProfileSchema = Joi.object({
   fullName: Joi.string().trim().min(2).max(120).required(),
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
   phone: Joi.string().trim().pattern(phonePattern).required(),
   address: Joi.string().trim().allow('').max(500).optional(),
   dateOfBirth: Joi.date().iso().allow('', null).optional(),

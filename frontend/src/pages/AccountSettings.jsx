@@ -13,6 +13,8 @@ const labelClass = 'mb-1.5 block text-xs font-semibold uppercase tracking-[0.14e
 const inputClass = 'h-11 w-full rounded-2xl border border-slate-300/90 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100';
 const readOnlyInputClass = 'h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600';
 const actionButtonClass = 'inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-semibold transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50';
+const profileEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const profilePhoneRegex = /^\+?[0-9()\-\s]{7,20}$/;
 
 const initialFormState = {
   fullName: '',
@@ -289,6 +291,30 @@ export default function AccountSettings() {
     setError('');
     setSuccess('');
 
+    if (!hasUnsavedChanges) {
+      setSuccess('No changes to save.');
+      return;
+    }
+
+    const fullName = String(form.fullName || '').trim();
+    const email = String(form.email || '').trim().toLowerCase();
+    const phone = String(form.phone || '').trim();
+
+    if (fullName.length < 2) {
+      setError('Full name must be at least 2 characters.');
+      return;
+    }
+
+    if (!profileEmailRegex.test(email)) {
+      setError('Please provide a valid email address.');
+      return;
+    }
+
+    if (!profilePhoneRegex.test(phone)) {
+      setError('Please provide a valid phone number.');
+      return;
+    }
+
     if (!validateForm()) {
       setError('Please correct the highlighted fields before saving.');
       return;
@@ -298,9 +324,9 @@ export default function AccountSettings() {
 
     try {
       const profilePayload = new FormData();
-      profilePayload.append('fullName', form.fullName);
-      profilePayload.append('email', form.email);
-      profilePayload.append('phone', form.phone);
+      profilePayload.append('fullName', fullName);
+      profilePayload.append('email', email);
+      profilePayload.append('phone', phone);
 
       if (profilePhotoFile) {
         profilePayload.append('profilePhotoFile', profilePhotoFile);
@@ -327,6 +353,9 @@ export default function AccountSettings() {
 
       const updatedSnapshot = {
         ...form,
+        fullName,
+        email,
+        phone,
         profilePhoto: savedProfilePhoto,
         currentPassword: '',
         newPassword: '',
@@ -346,10 +375,10 @@ export default function AccountSettings() {
       if (typeof updateUser === 'function') {
         updateUser((prev) => ({
           ...prev,
-          fullName: form.fullName,
-          name: form.fullName,
-          email: form.email,
-          phone: form.phone,
+          fullName,
+          name: fullName,
+          email,
+          phone,
           profilePhoto: savedProfilePhoto || '',
         }));
       }

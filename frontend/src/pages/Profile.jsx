@@ -40,6 +40,9 @@ const initialFormState = {
   employmentStatus: '',
 };
 
+const profileEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const profilePhoneRegex = /^\+?[0-9()\-\s]{7,20}$/;
+
 const formatDateInput = (value) => {
   if (!value) return '';
   const date = new Date(value);
@@ -212,17 +215,43 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!hasUnsavedChanges) {
+      setSuccess('No changes to save.');
+      return;
+    }
+
+    const fullName = String(form.fullName || '').trim();
+    const email = String(form.email || '').trim().toLowerCase();
+    const phone = String(form.phone || '').trim();
+    const address = String(form.address || '').trim();
+    const dateOfBirth = String(form.dateOfBirth || '').trim();
+
+    if (fullName.length < 2) {
+      setError('Full name must be at least 2 characters.');
+      return;
+    }
+
+    if (!profileEmailRegex.test(email)) {
+      setError('Please provide a valid email address.');
+      return;
+    }
+
+    if (!profilePhoneRegex.test(phone)) {
+      setError('Please provide a valid phone number.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setSuccess('');
 
     try {
       const payload = new FormData();
-      payload.append('fullName', form.fullName);
-      payload.append('email', form.email);
-      payload.append('phone', form.phone);
-      payload.append('address', form.address);
-      payload.append('dateOfBirth', form.dateOfBirth || '');
+      payload.append('fullName', fullName);
+      payload.append('email', email);
+      payload.append('phone', phone);
+      payload.append('address', address);
+      payload.append('dateOfBirth', dateOfBirth);
 
       if (profilePhotoFile) {
         payload.append('profilePhotoFile', profilePhotoFile);
@@ -248,12 +277,12 @@ export default function Profile() {
       if (typeof updateUser === 'function') {
         updateUser((prev) => ({
           ...prev,
-          fullName: form.fullName,
-          name: form.fullName,
-          email: form.email,
-          phone: form.phone,
-          address: form.address,
-          dateOfBirth: form.dateOfBirth || '',
+          fullName,
+          name: fullName,
+          email,
+          phone,
+          address,
+          dateOfBirth,
           profilePhoto: savedProfilePhoto || '',
         }));
       }

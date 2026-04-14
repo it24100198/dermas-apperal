@@ -77,9 +77,7 @@ export const getNextEmployeeId = () => api.get('/account-requests/next-employee-
 export const getAccountSettingsMe = () => api.get('/account-settings/me');
 export const updateAccountSettingsProfile = (data) => {
   if (data instanceof FormData) {
-    return api.put('/account-settings/profile', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.put('/account-settings/profile', data);
   }
 
   return api.put('/account-settings/profile', data);

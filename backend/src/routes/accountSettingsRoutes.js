@@ -28,10 +28,22 @@ const upload = multer({
   },
 });
 
+const uploadProfilePhoto = (req, res, next) => {
+  upload.single('profilePhotoFile')(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+
+    const message = error?.message || 'Profile photo upload failed';
+    return res.status(400).json({ error: message });
+  });
+};
+
 router.use(requireAuth);
 
 router.get('/me', getMyAccountSettings);
-router.put('/profile', upload.single('profilePhotoFile'), validate(updateAccountProfileSchema), updateProfile);
+router.put('/profile', uploadProfilePhoto, validate(updateAccountProfileSchema), updateProfile);
 router.put('/password', validate(updateAccountPasswordSchema), updatePassword);
 router.put('/preferences', validate(updateAccountPreferencesSchema), updatePreferences);
 
