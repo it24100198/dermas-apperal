@@ -74,6 +74,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Ensure DB is connected for both serverless and long-running runtimes.
+app.use(async (req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 const healthHandler = (req, res) => {
   const stateByCode = {
     0: 'disconnected',
@@ -124,7 +134,7 @@ app.use((err, req, res, next) => {
   return res.status(safeStatus).json({ error: 'Request could not be processed.' });
 });
 
-export const connectDatabase = async () => {
+export async function connectDatabase() {
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
@@ -145,12 +155,12 @@ export const connectDatabase = async () => {
   }
 
   return databaseConnectionPromise;
-};
+}
 
-export const disconnectDatabase = async () => {
+export async function disconnectDatabase() {
   databaseConnectionPromise = null;
   await mongoose.disconnect();
-};
+}
 
 export default app;
 
