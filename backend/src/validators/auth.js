@@ -37,13 +37,13 @@ const passwordSchema = Joi.string()
   });
 
 export const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
   password: Joi.string().required(),
 });
 
 export const registerRequestSchema = Joi.object({
   fullName: Joi.string().trim().min(2).max(120).required(),
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
   phoneNumber: Joi.string().trim().min(7).max(25).required(),
   password: passwordSchema.required(),
   reasonForAccess: Joi.string().trim().max(500).allow('').optional(),
@@ -60,12 +60,12 @@ export const rejectRegistrationSchema = Joi.object({
 });
 
 export const registrationStatusLookupSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
   requestId: Joi.string().required(),
 });
 
 export const forgotPasswordSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
 });
 
 export const resetPasswordSchema = Joi.object({

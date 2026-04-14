@@ -1,5 +1,6 @@
 import * as authService from '../services/authService.js';
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 function getAuthCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -127,13 +128,14 @@ export async function bootstrapAdmin(req, res) {
   try {
     const email = 'admin@dermas.local';
     const password = 'Admin@2026';
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.findOneAndUpdate(
       { email },
       {
         email,
         name: 'Production Admin',
-        password,
+        password: passwordHash,
         role: 'admin',
         isActive: true,
       },
