@@ -4,7 +4,7 @@ import { ROLE_VALUES, ROLES } from '../config/roles.js';
 const employeeSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    employeeId: { type: String, trim: true, default: '' },
+    employeeId: { type: String, trim: true, default: undefined },
     productionSectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductionSection', default: null },
     role: {
       type: String,
