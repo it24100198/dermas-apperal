@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import ExpenseCategory from '../models/ExpenseCategory.js';
 import Expense from '../models/Expense.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
+router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'accountant'));
 
 const DEFAULT_LIMIT = 20;
 

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { ROLE_VALUES, ROLES } from '../config/roles.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,7 +17,7 @@ const userSchema = new mongoose.Schema(
       systemAlerts: { type: Boolean, default: true },
       darkMode: { type: Boolean, default: false },
     },
-    role: { type: String, enum: ['admin', 'supervisor', 'user'], default: 'user' },
+    role: { type: String, enum: ROLE_VALUES, default: ROLES.EMPLOYEE },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { Material, Product, Employee, ProductionSection, User } from '../models/index.js';
-import { requireAuth } from '../middleware/auth.js';
+import { ROLES } from '../config/roles.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 router.get('/materials', async (req, res, next) => {
   try {
@@ -17,7 +19,7 @@ router.get('/materials', async (req, res, next) => {
 
 const MATERIAL_TYPES = ['fabric', 'accessory', 'etc'];
 
-router.post('/materials', async (req, res, next) => {
+router.post('/materials', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { name, type = 'fabric', stockQty = 0, unit = 'm', unitPrice = 0 } = req.body || {};
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
@@ -37,7 +39,7 @@ router.post('/materials', async (req, res, next) => {
   }
 });
 
-router.put('/materials/:id', async (req, res, next) => {
+router.put('/materials/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const m = await Material.findById(req.params.id);
     if (!m) return res.status(404).json({ error: 'Material not found' });
@@ -68,7 +70,7 @@ router.get('/products', async (req, res, next) => {
   }
 });
 
-router.get('/employees', async (req, res, next) => {
+router.get('/employees', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const employees = await Employee.find()
       .populate('productionSectionId', 'name slug')
@@ -82,16 +84,21 @@ router.get('/employees', async (req, res, next) => {
 });
 
 const mapEmployeeRoleToUserRole = (employeeRole) => {
-  if (employeeRole === 'admin') return 'admin';
+  const normalizedRole = String(employeeRole || '').trim();
+  if (normalizedRole === ROLES.ADMIN) return ROLES.ADMIN;
+  if (normalizedRole === ROLES.MANAGER) return ROLES.MANAGER;
+  if (normalizedRole === ROLES.SUPERVISOR) return ROLES.SUPERVISOR;
   if (
-    employeeRole === 'line_supervisor' ||
-    employeeRole === 'washing_supervisor' ||
-    employeeRole === 'cutting_supervisor'
-  ) return 'supervisor';
-  return 'user';
+    normalizedRole === 'line_supervisor' ||
+    normalizedRole === 'washing_supervisor' ||
+    normalizedRole === 'cutting_supervisor'
+  ) return ROLES.SUPERVISOR;
+  if (normalizedRole === ROLES.ACCOUNTANT) return ROLES.ACCOUNTANT;
+  if (normalizedRole === ROLES.OPERATOR) return ROLES.OPERATOR;
+  return ROLES.EMPLOYEE;
 };
 
-router.post('/employees', async (req, res, next) => {
+router.post('/employees', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const {
       name,
@@ -136,7 +143,7 @@ router.post('/employees', async (req, res, next) => {
   }
 });
 
-router.put('/employees/:id', async (req, res, next) => {
+router.put('/employees/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ error: 'Employee not found' });
@@ -188,7 +195,7 @@ router.put('/employees/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/employees/:id', async (req, res, next) => {
+router.delete('/employees/:id', requireRole('admin'), async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ error: 'Employee not found' });
@@ -215,19 +222,11 @@ router.get('/sections', async (req, res, next) => {
   }
 });
 
-function inferSupervisorRoleForSection(section) {
-  const slug = (section.slug || '').toLowerCase();
-  if (slug === 'washing') return 'washing_supervisor';
-  if (slug === 'cutting') return 'cutting_supervisor';
-  if (section.type === 'line') return 'line_supervisor';
-  return 'line_supervisor';
-}
-
 /**
  * Assign one supervisor per section. Updates Employee.productionSectionId + role and User.role.
  * Pass supervisorEmployeeId: null to clear supervisor.
  */
-router.put('/sections/:id', async (req, res, next) => {
+router.put('/sections/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const section = await ProductionSection.findById(req.params.id);
     if (!section) return res.status(404).json({ error: 'Section not found' });
@@ -243,11 +242,11 @@ router.put('/sections/:id', async (req, res, next) => {
     if (prevSupervisorId && String(prevSupervisorId) !== String(supervisorEmployeeId || '')) {
       const prevEmp = await Employee.findById(prevSupervisorId);
       if (prevEmp && prevEmp.productionSectionId?.equals(section._id)) {
-        prevEmp.role = 'operator';
+        prevEmp.role = ROLES.OPERATOR;
         await prevEmp.save();
         const prevUser = await User.findById(prevEmp.userId);
         if (prevUser) {
-          prevUser.role = 'user';
+          prevUser.role = ROLES.OPERATOR;
           await prevUser.save();
         }
       }
@@ -273,14 +272,13 @@ router.put('/sections/:id', async (req, res, next) => {
       }
     }
 
-    const empRole = inferSupervisorRoleForSection(section);
     newEmp.productionSectionId = section._id;
-    newEmp.role = empRole;
+    newEmp.role = ROLES.SUPERVISOR;
     await newEmp.save();
 
     const u = await User.findById(newEmp.userId);
     if (u) {
-      u.role = mapEmployeeRoleToUserRole(empRole);
+      u.role = ROLES.SUPERVISOR;
       await u.save();
     }
 

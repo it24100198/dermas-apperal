@@ -6,6 +6,7 @@ import DeliveryOrder from '../models/DeliveryOrder.js';
 import SalesReturn from '../models/SalesReturn.js';
 import MaterialCatalog from '../models/MaterialCatalog.js';
 import StockMovement from '../models/StockMovement.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   createQuotationSchema,
@@ -30,6 +31,8 @@ import {
 } from '../validators/contracts.js';
 
 const router = Router();
+router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 // ════════════════════════════════════════════════
 // QUOTATIONS

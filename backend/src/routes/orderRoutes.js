@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import CustomerOrder, { STATUS_STAGES } from '../models/CustomerOrder.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 // GET /api/orders/stats
 router.get('/stats', async (req, res, next) => {

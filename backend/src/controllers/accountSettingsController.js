@@ -6,10 +6,11 @@ const PHONE_REGEX = /^\+?[0-9()\-\s]{7,20}$/;
 
 const EMPLOYEE_ROLE_LABELS = {
   admin: 'Administrator',
-  line_supervisor: 'Line Supervisor',
-  washing_supervisor: 'Washing Supervisor',
-  cutting_supervisor: 'Cutting Supervisor',
+  manager: 'Manager',
+  supervisor: 'Supervisor',
+  accountant: 'Accountant',
   operator: 'Operator',
+  employee: 'Employee',
 };
 
 const parseError = (err, fallback) => err?.message || fallback;

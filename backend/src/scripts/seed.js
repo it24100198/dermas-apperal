@@ -51,7 +51,7 @@ async function seed() {
     { email: 'cutting@demo.com', password: hashed('cut123'), name: 'Cutting Supervisor', role: 'supervisor' },
     { email: 'washing@demo.com', password: hashed('wash123'), name: 'Washing Supervisor', role: 'supervisor' },
     { email: 'line01@demo.com', password: hashed('line123'), name: 'Line 01 Supervisor', role: 'supervisor' },
-    { email: 'user@demo.com', password: hashed('user123'), name: 'Operator', role: 'user' },
+    { email: 'user@demo.com', password: hashed('user123'), name: 'Operator', role: 'operator' },
   ]);
 
   const sections = await ProductionSection.insertMany([

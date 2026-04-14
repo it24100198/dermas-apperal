@@ -11,11 +11,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_OPTIONS = [
-  { value: 'operator', label: 'Operator' },
-  { value: 'line_supervisor', label: 'Line Supervisor' },
-  { value: 'washing_supervisor', label: 'Washing Supervisor' },
-  { value: 'cutting_supervisor', label: 'Cutting Supervisor' },
   { value: 'admin', label: 'Admin' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'accountant', label: 'Accountant' },
+  { value: 'operator', label: 'Operator' },
+  { value: 'employee', label: 'Employee' },
 ];
 
 const STATUS_OPTIONS = [

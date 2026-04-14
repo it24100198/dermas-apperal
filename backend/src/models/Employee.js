@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ROLE_VALUES, ROLES } from '../config/roles.js';
 
 const employeeSchema = new mongoose.Schema(
   {
@@ -7,8 +8,8 @@ const employeeSchema = new mongoose.Schema(
     productionSectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductionSection', default: null },
     role: {
       type: String,
-      enum: ['line_supervisor', 'washing_supervisor', 'cutting_supervisor', 'admin', 'operator'],
-      default: 'operator',
+      enum: ROLE_VALUES,
+      default: ROLES.OPERATOR,
     },
     name: { type: String, trim: true },
     phone: { type: String, trim: true },

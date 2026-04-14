@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as manufacturingController from '../controllers/manufacturingController.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { requireWashingSupervisor } from '../middleware/supervisor.js';
 import { validate } from '../middleware/validate.js';
 import { cuttingSchema } from '../validators/jobs.js';
@@ -10,6 +10,7 @@ import { saveQcSchema, issueAccessorySchema } from '../validators/qc.js';
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 // Overview
 router.get('/overview', manufacturingController.getOverview);

@@ -9,9 +9,13 @@ import ManufacturingJob from '../models/ManufacturingJob.js';
 import HourlyProduction from '../models/HourlyProduction.js';
 import Employee from '../models/Employee.js';
 import QcCheck from '../models/QcCheck.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 const AI_SERVICE = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+
+router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 // ─── Helper: call AI service with fallback ───────────────────────────
 async function callAI(method, path, data = null) {

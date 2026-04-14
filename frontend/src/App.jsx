@@ -65,6 +65,7 @@ import Register from './pages/Register';
 import RequestStatus from './pages/RequestStatus';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import { ROLES } from './utils/roles';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,14 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoadingFallback />;
   if (!user) return <Navigate to="/welcome" replace />;
+  return children;
+}
+
+function RoleRoute({ children, allowedRoles }) {
+  const { user, loading } = useAuth();
+  if (loading) return <AuthLoadingFallback />;
+  if (!user) return <Navigate to="/welcome" replace />;
+  if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -118,9 +127,9 @@ function AppRoutes() {
       <Route
         path="/supervisor"
         element={
-          <SupervisorProtectedRoute>
+          <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}>
             <SupervisorLayout />
-          </SupervisorProtectedRoute>
+          </RoleRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -137,64 +146,64 @@ function AppRoutes() {
         }
       >
         <Route index element={<Dashboard />} />
-        <Route path="financial-health" element={<FinancialHealth />} />
-        <Route path="manufacturing/overview" element={<ManufacturingOverview />} />
-        <Route path="manufacturing/workflow" element={<ManufacturingWorkflowBoard />} />
-        <Route path="manufacturing/cutting" element={<Cutting />} />
-        <Route path="manufacturing/washing" element={<Washing />} />
-        <Route path="manufacturing/line-assignment" element={<LineAssignment />} />
-        <Route path="manufacturing/sections" element={<SectionManagement />} />
-        <Route path="manufacturing/qc" element={<QcList />} />
-        <Route path="manufacturing/qc/:transferId" element={<QcDetail />} />
-        <Route path="manufacturing/final" element={<FinalList />} />
-        <Route path="manufacturing/final/:jobId" element={<FinalDetail />} />
-        <Route path="jobs" element={<JobsList />} />
-        <Route path="jobs/create" element={<JobCreate />} />
-        <Route path="jobs/:jobId" element={<ErrorBoundary><JobDetail /></ErrorBoundary>} />
-        <Route path="production/hourly" element={<HourlyProduction />} />
+        <Route path="financial-health" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><FinancialHealth /></RoleRoute>} />
+        <Route path="manufacturing/overview" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><ManufacturingOverview /></RoleRoute>} />
+        <Route path="manufacturing/workflow" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><ManufacturingWorkflowBoard /></RoleRoute>} />
+        <Route path="manufacturing/cutting" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><Cutting /></RoleRoute>} />
+        <Route path="manufacturing/washing" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><Washing /></RoleRoute>} />
+        <Route path="manufacturing/line-assignment" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><LineAssignment /></RoleRoute>} />
+        <Route path="manufacturing/sections" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><SectionManagement /></RoleRoute>} />
+        <Route path="manufacturing/qc" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><QcList /></RoleRoute>} />
+        <Route path="manufacturing/qc/:transferId" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><QcDetail /></RoleRoute>} />
+        <Route path="manufacturing/final" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><FinalList /></RoleRoute>} />
+        <Route path="manufacturing/final/:jobId" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><FinalDetail /></RoleRoute>} />
+        <Route path="jobs" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><JobsList /></RoleRoute>} />
+        <Route path="jobs/create" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}><JobCreate /></RoleRoute>} />
+        <Route path="jobs/:jobId" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><ErrorBoundary><JobDetail /></ErrorBoundary></RoleRoute>} />
+        <Route path="production/hourly" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.OPERATOR]}><HourlyProduction /></RoleRoute>} />
         {/* Order Tracking */}
-        <Route path="orders/dashboard" element={<CustomerOrdersDashboard />} />
-        <Route path="orders" element={<CustomerOrdersList />} />
-        <Route path="orders/new" element={<CustomerOrdersList />} />
-        <Route path="orders/report" element={<OrderReport />} />
-        <Route path="orders/:orderId" element={<CustomerOrderDetail />} />
+        <Route path="orders/dashboard" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><CustomerOrdersDashboard /></RoleRoute>} />
+        <Route path="orders" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><CustomerOrdersList /></RoleRoute>} />
+        <Route path="orders/new" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}><CustomerOrdersList /></RoleRoute>} />
+        <Route path="orders/report" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><OrderReport /></RoleRoute>} />
+        <Route path="orders/:orderId" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><CustomerOrderDetail /></RoleRoute>} />
         {/* Expense & Employee Management */}
-        <Route path="expenses/categories" element={<ExpenseCategories />} />
-        <Route path="expenses" element={<ExpenseList />} />
-        <Route path="expenses/recurring" element={<RecurringExpenses />} />
-        <Route path="expenses/reimbursements" element={<ReimbursementClaims />} />
-        <Route path="employees" element={<EmployeeManagement />} />
-        <Route path="employees/account-requests" element={<AccountRequests />} />
+        <Route path="expenses/categories" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><ExpenseCategories /></RoleRoute>} />
+        <Route path="expenses" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><ExpenseList /></RoleRoute>} />
+        <Route path="expenses/recurring" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><RecurringExpenses /></RoleRoute>} />
+        <Route path="expenses/reimbursements" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT, ROLES.EMPLOYEE, ROLES.OPERATOR, ROLES.SUPERVISOR]}><ReimbursementClaims /></RoleRoute>} />
+        <Route path="employees" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}><EmployeeManagement /></RoleRoute>} />
+        <Route path="employees/account-requests" element={<RoleRoute allowedRoles={[ROLES.ADMIN]}><AccountRequests /></RoleRoute>} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="account-settings" element={<AccountSettings />} />
         {/* Purchase Management */}
-        <Route path="purchase/suppliers" element={<SupplierDatabase />} />
-        <Route path="purchase/materials" element={<MaterialCatalogPage />} />
-        <Route path="purchase/requisitions" element={<Requisitions />} />
-        <Route path="purchase/orders" element={<PurchaseOrders />} />
-        <Route path="purchase/grn" element={<GoodsReceived />} />
-        <Route path="purchase/analytics" element={<PurchaseAnalytics />} />
+        <Route path="purchase/suppliers" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><SupplierDatabase /></RoleRoute>} />
+        <Route path="purchase/materials" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><MaterialCatalogPage /></RoleRoute>} />
+        <Route path="purchase/requisitions" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><Requisitions /></RoleRoute>} />
+        <Route path="purchase/orders" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><PurchaseOrders /></RoleRoute>} />
+        <Route path="purchase/grn" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><GoodsReceived /></RoleRoute>} />
+        <Route path="purchase/analytics" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><PurchaseAnalytics /></RoleRoute>} />
         {/* Stock Control */}
-        <Route path="stock/adjustments" element={<StockAdjustments />} />
-        <Route path="stock/issuance"    element={<MaterialIssuancePage />} />
-        <Route path="stock/history"     element={<StockHistory />} />
-        <Route path="stock/barcode"     element={<BarcodeScanner />} />
-        <Route path="stock/inventory"   element={<InventoryDashboard />} />
+        <Route path="stock/adjustments" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><StockAdjustments /></RoleRoute>} />
+        <Route path="stock/issuance"    element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.OPERATOR]}><MaterialIssuancePage /></RoleRoute>} />
+        <Route path="stock/history"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><StockHistory /></RoleRoute>} />
+        <Route path="stock/barcode"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.OPERATOR]}><BarcodeScanner /></RoleRoute>} />
+        <Route path="stock/inventory"   element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><InventoryDashboard /></RoleRoute>} />
         {/* Sales & POS */}
-        <Route path="sales/quotations" element={<Quotations />} />
-        <Route path="sales/orders"     element={<SalesOrders />} />
-        <Route path="sales/invoices"   element={<Invoices />} />
-        <Route path="sales/delivery"   element={<DeliveryDispatch />} />
-        <Route path="sales/returns"    element={<SalesReturns />} />
-        <Route path="sales/analytics"  element={<SalesAnalytics />} />
+        <Route path="sales/quotations" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><Quotations /></RoleRoute>} />
+        <Route path="sales/orders"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><SalesOrders /></RoleRoute>} />
+        <Route path="sales/invoices"   element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><Invoices /></RoleRoute>} />
+        <Route path="sales/delivery"   element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><DeliveryDispatch /></RoleRoute>} />
+        <Route path="sales/returns"    element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><SalesReturns /></RoleRoute>} />
+        <Route path="sales/analytics"  element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ACCOUNTANT]}><SalesAnalytics /></RoleRoute>} />
         {/* AI Production Intelligence */}
-        <Route path="ai/dashboard"          element={<AIDashboard />} />
-        <Route path="ai/wastage"             element={<WastagePrediction />} />
-        <Route path="ai/efficiency"          element={<EfficiencyPrediction />} />
-        <Route path="ai/suggestions"         element={<SmartSuggestions />} />
-        <Route path="ai/worker-performance"  element={<WorkerPerformanceAI />} />
-        <Route path="ai/alerts"              element={<AlertsRecommendations />} />
+        <Route path="ai/dashboard"          element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><AIDashboard /></RoleRoute>} />
+        <Route path="ai/wastage"             element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><WastagePrediction /></RoleRoute>} />
+        <Route path="ai/efficiency"          element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><EfficiencyPrediction /></RoleRoute>} />
+        <Route path="ai/suggestions"         element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><SmartSuggestions /></RoleRoute>} />
+        <Route path="ai/worker-performance"  element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><WorkerPerformanceAI /></RoleRoute>} />
+        <Route path="ai/alerts"              element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><AlertsRecommendations /></RoleRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

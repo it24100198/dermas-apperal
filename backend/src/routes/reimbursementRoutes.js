@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import ReimbursementClaim from '../models/ReimbursementClaim.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
+router.use(requireAuth);
 
 const DEFAULT_LIMIT = 20;
 
@@ -48,7 +50,7 @@ function normalizeOptionalString(value) {
 }
 
 // GET /api/reimbursements?status=pending
-router.get('/', async (req, res, next) => {
+router.get('/', requireRole('admin', 'manager', 'accountant'), async (req, res, next) => {
   try {
     const query = req.query;
     const filter = {};
@@ -116,7 +118,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/reimbursements  – employee submits claim
-router.post('/', async (req, res, next) => {
+router.post('/', requireRole('admin', 'manager', 'accountant', 'employee', 'operator', 'supervisor'), async (req, res, next) => {
   try {
     const claimBody = {
       ...req.body,

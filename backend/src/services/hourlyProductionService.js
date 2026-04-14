@@ -1,9 +1,14 @@
 import { ManufacturingJob, HourlyProduction, JobLineAssignment } from '../models/index.js';
 import { JOB_STATUS } from '../utils/statusMachine.js';
 
+const LEGACY_SUPERVISOR_ROLES = ['line_supervisor', 'washing_supervisor', 'cutting_supervisor'];
+
 export async function listJobsForHourlyProduction(userEmployee) {
   const query = { status: { $in: [JOB_STATUS.LINE_ASSIGNED, JOB_STATUS.LINE_IN_PROGRESS] } };
-  if (userEmployee?.productionSectionId && userEmployee.role === 'line_supervisor') {
+  if (
+    userEmployee?.productionSectionId &&
+    (userEmployee.role === 'supervisor' || LEGACY_SUPERVISOR_ROLES.includes(userEmployee.role))
+  ) {
     const section = userEmployee.productionSectionId;
     const lineName = section?.name || section?.slug;
     if (lineName) {
@@ -94,7 +99,10 @@ export async function getHourlyRecords(jobId, userEmployee) {
   const query = { jobId };
 
   // Line supervisor should only see records for their assigned line/section.
-  if (userEmployee?.productionSectionId && userEmployee.role === 'line_supervisor') {
+  if (
+    userEmployee?.productionSectionId &&
+    (userEmployee.role === 'supervisor' || LEGACY_SUPERVISOR_ROLES.includes(userEmployee.role))
+  ) {
     const section = userEmployee.productionSectionId;
     const lineName = section?.name || section?.slug;
     if (lineName) query.lineName = lineName;

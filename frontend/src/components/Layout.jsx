@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ROLE_LABELS } from '../utils/roles';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: 'bi-speedometer2' },
@@ -169,11 +170,20 @@ export default function Layout() {
   const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const role = user?.role || 'employee';
+  const can = (roles) => roles.includes(role);
+  const visibleModule = {
+    expense: can(['admin', 'manager', 'accountant']),
+    employee: can(['admin', 'manager']),
+    purchase: can(['admin', 'manager', 'supervisor']),
+    manufacturing: can(['admin', 'manager', 'supervisor', 'operator']),
+    stock: can(['admin', 'manager', 'supervisor', 'operator']),
+    sales: can(['admin', 'manager', 'supervisor', 'accountant']),
+    orderTracking: can(['admin', 'manager', 'supervisor']),
+  };
 
   const displayName = user?.fullName || user?.name || user?.email || 'Admin User';
-  const displayRole = String(user?.role || 'Administrator')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  const displayRole = ROLE_LABELS[String(user?.role || 'employee')] || 'Employee';
   const avatarUrl = user?.profilePhoto || '';
   const avatarInitial = (displayName || 'A').charAt(0).toUpperCase();
 
@@ -203,6 +213,13 @@ export default function Layout() {
   useEffect(() => {
     setAvatarLoadFailed(false);
   }, [avatarUrl]);
+
+  useEffect(() => {
+    if (visibleModule[activeModule]) return;
+    const fallback = ['expense', 'employee', 'purchase', 'manufacturing', 'stock', 'sales', 'orderTracking']
+      .find((moduleKey) => visibleModule[moduleKey]) || null;
+    setActiveModule(fallback);
+  }, [activeModule, visibleModule]);
 
   const handleLogout = () => {
     logout();
@@ -251,7 +268,7 @@ export default function Layout() {
             </NavLink>
           ))}
           {/* Expense Management module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.expense ? (
             <>
               <button
                 onClick={() => handleModuleSelect('expense')}
@@ -284,7 +301,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/financial-health"
               end
@@ -298,7 +315,7 @@ export default function Layout() {
           )}
 
           {/* Employee Management module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.employee ? (
             <>
               <button
                 onClick={() => handleModuleSelect('employee')}
@@ -330,7 +347,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/employees"
               onClick={() => handleModuleSelect('employee')}
@@ -343,7 +360,7 @@ export default function Layout() {
           )}
 
           {/* Purchase Management module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.purchase ? (
             <>
               <button
                 onClick={() => handleModuleSelect('purchase')}
@@ -375,7 +392,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/purchase/suppliers"
               onClick={() => handleModuleSelect('purchase')}
@@ -388,7 +405,7 @@ export default function Layout() {
           )}
 
           {/* Manufacturing module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.manufacturing ? (
             <>
               <button
                 onClick={() => handleModuleSelect('manufacturing')}
@@ -454,7 +471,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/manufacturing/overview"
               onClick={() => handleModuleSelect('manufacturing')}
@@ -467,7 +484,7 @@ export default function Layout() {
           )}
 
           {/* Stock Control module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.stock ? (
             <>
               <button
                 onClick={() => handleModuleSelect('stock')}
@@ -499,7 +516,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/stock/adjustments"
               onClick={() => handleModuleSelect('stock')}
@@ -512,7 +529,7 @@ export default function Layout() {
           )}
 
           {/* Sales & POS module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.sales ? (
             <>
               <button
                 onClick={() => handleModuleSelect('sales')}
@@ -544,7 +561,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/sales/quotations"
               onClick={() => handleModuleSelect('sales')}
@@ -557,7 +574,7 @@ export default function Layout() {
           )}
 
           {/* Order Tracking module */}
-          {sidebarOpen ? (
+          {sidebarOpen && visibleModule.orderTracking ? (
             <>
               <button
                 onClick={() => handleModuleSelect('orderTracking')}
@@ -590,7 +607,7 @@ export default function Layout() {
                 </div>
               )}
             </>
-          ) : (
+          ) : sidebarOpen ? null : (
             <NavLink
               to="/orders/dashboard"
               onClick={() => handleModuleSelect('orderTracking')}

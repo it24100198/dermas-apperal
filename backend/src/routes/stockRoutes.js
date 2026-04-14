@@ -4,6 +4,7 @@ import Material from '../models/Material.js';
 import StockAdjustment from '../models/StockAdjustment.js';
 import MaterialIssuance from '../models/MaterialIssuance.js';
 import StockMovement from '../models/StockMovement.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   createStockAdjustmentSchema,
@@ -15,6 +16,8 @@ import {
 } from '../validators/contracts.js';
 
 const router = Router();
+router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 // ─────────────────────────────────────
 // STOCK ADJUSTMENTS

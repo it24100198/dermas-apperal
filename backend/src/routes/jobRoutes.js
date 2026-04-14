@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import * as jobController from '../controllers/jobController.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createJobSchema, assignLinesSchema } from '../validators/jobs.js';
 
 const router = Router({ mergeParams: true });
 
 router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 router.get('/', jobController.list);
 router.post('/', validate(createJobSchema), jobController.create);

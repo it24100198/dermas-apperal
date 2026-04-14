@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { ROLE_VALUES } from '../config/roles.js';
 
 const COMMON_PASSWORDS = new Set([
   'password',
@@ -51,7 +52,7 @@ export const registerRequestSchema = Joi.object({
 
 export const approveRegistrationSchema = Joi.object({
   employeeId: Joi.string().trim().max(40).allow('').optional(),
-  role: Joi.string().valid('operator', 'line_supervisor', 'washing_supervisor', 'cutting_supervisor', 'admin').required(),
+  role: Joi.string().valid(...ROLE_VALUES).required(),
   productionSectionId: Joi.string().allow('', null).optional(),
 });
 

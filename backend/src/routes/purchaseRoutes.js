@@ -4,6 +4,7 @@ import MaterialCatalog from '../models/MaterialCatalog.js';
 import PurchaseRequisition from '../models/PurchaseRequisition.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
 import GoodsReceivedNote from '../models/GoodsReceivedNote.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   createSupplierSchema,
@@ -26,6 +27,8 @@ import {
 } from '../validators/contracts.js';
 
 const router = Router();
+router.use(requireAuth);
+router.use(requireRole('admin', 'manager', 'supervisor'));
 
 const parsePagination = (query) => {
   const page = Math.max(1, Number(query.page) || 1);

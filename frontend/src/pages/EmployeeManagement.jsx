@@ -9,14 +9,15 @@ import {
 } from '../api/client';
 
 const EMPLOYEE_ROLES = [
-  'operator',
-  'line_supervisor',
-  'washing_supervisor',
-  'cutting_supervisor',
   'admin',
+  'manager',
+  'supervisor',
+  'accountant',
+  'operator',
+  'employee',
 ];
 
-const SUPERVISOR_ROLES = ['line_supervisor', 'washing_supervisor', 'cutting_supervisor'];
+const SUPERVISOR_ROLES = ['supervisor', 'line_supervisor', 'washing_supervisor', 'cutting_supervisor'];
 const PAGE_SIZE = 8;
 
 const emptyForm = {

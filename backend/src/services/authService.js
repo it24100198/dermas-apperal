@@ -9,6 +9,7 @@ import {
   RegistrationRequest,
   User,
 } from '../models/index.js';
+import { ROLES } from '../config/roles.js';
 import {
   notifyPasswordResetRequested,
   notifyRegistrationApproved,
@@ -17,15 +18,20 @@ import {
 } from './notificationService.js';
 
 const mapEmployeeRoleToUserRole = (employeeRole) => {
-  if (employeeRole === 'admin') return 'admin';
+  const normalizedRole = String(employeeRole || '').trim();
+  if (normalizedRole === ROLES.ADMIN) return ROLES.ADMIN;
+  if (normalizedRole === ROLES.MANAGER) return ROLES.MANAGER;
   if (
-    employeeRole === 'line_supervisor' ||
-    employeeRole === 'washing_supervisor' ||
-    employeeRole === 'cutting_supervisor'
+    normalizedRole === ROLES.SUPERVISOR ||
+    normalizedRole === 'line_supervisor' ||
+    normalizedRole === 'washing_supervisor' ||
+    normalizedRole === 'cutting_supervisor'
   ) {
-    return 'supervisor';
+    return ROLES.SUPERVISOR;
   }
-  return 'user';
+  if (normalizedRole === ROLES.ACCOUNTANT) return ROLES.ACCOUNTANT;
+  if (normalizedRole === ROLES.OPERATOR) return ROLES.OPERATOR;
+  return ROLES.EMPLOYEE;
 };
 
 export async function login(email, password) {

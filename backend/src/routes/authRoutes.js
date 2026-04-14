@@ -56,7 +56,12 @@ router.post('/forgot-password', forgotPasswordRateLimit, validate(forgotPassword
 router.post('/reset-password', resetPasswordRateLimit, validate(resetPasswordSchema), authController.resetPassword);
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.me);
-router.post('/bootstrap-admin', authController.bootstrapAdmin);
+router.post('/bootstrap-admin', (req, res, next) => {
+	if (process.env.NODE_ENV === 'production') {
+		return res.status(404).json({ error: 'Not found' });
+	}
+	return authController.bootstrapAdmin(req, res, next);
+});
 
 router.get('/registration-requests', requireAuth, requireRole('admin'), authController.listRegistrationRequests);
 router.get('/registration-requests/:id', requireAuth, requireRole('admin'), authController.getRegistrationRequestDetail);
