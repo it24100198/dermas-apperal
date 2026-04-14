@@ -1,4 +1,5 @@
 import * as authService from '../services/authService.js';
+import User from '../models/User.js';
 
 function getAuthCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -119,4 +120,37 @@ export async function resetPassword(req, res) {
 export async function logout(req, res) {
   clearAuthCookie(res);
   return res.json({ message: 'Signed out successfully.' });
+}
+
+// TEMPORARY: bootstrap endpoint used only for production E2E verification.
+export async function bootstrapAdmin(req, res) {
+  try {
+    const email = 'admin@dermas.local';
+    const password = 'Admin@2026';
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      {
+        email,
+        name: 'Production Admin',
+        password,
+        role: 'admin',
+        isActive: true,
+      },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    ).select('+password');
+
+    if (!user) {
+      return res.status(500).json({ error: 'Unable to create bootstrap admin user.' });
+    }
+
+    return res.json({
+      success: true,
+      email,
+      password,
+      message: 'Bootstrap admin ready.',
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to bootstrap admin user.' });
+  }
 }
