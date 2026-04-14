@@ -31,8 +31,17 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      const isAllowed = allowedOrigins.includes(normalizeOrigin(origin));
-      if (!isAllowed) return callback(new Error('CORS origin not allowed'));
+      const normalizedOrigin = normalizeOrigin(origin);
+      
+      if (normalizedOrigin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      const isAllowed = allowedOrigins.includes(normalizedOrigin);
+      if (!isAllowed) {
+        console.warn(`[CORS Blocked] Origin missing: ${normalizedOrigin}`);
+        return callback(new Error('CORS origin not allowed'));
+      }
       return callback(null, true);
     },
     credentials: true,
