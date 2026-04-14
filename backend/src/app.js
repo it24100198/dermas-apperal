@@ -65,7 +65,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/api/health", (req, res) => {
+const healthHandler = (req, res) => {
   const stateByCode = {
     0: 'disconnected',
     1: 'connected',
@@ -86,9 +86,14 @@ app.get("/api/health", (req, res) => {
     },
     timestamp: new Date().toISOString(),
   });
-});
+};
 
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+
+// Support both deployment styles where a platform may already prefix incoming routes with /api.
 app.use('/api', routes);
+app.use('/', routes);
 
 app.use((req, res) => {
   res.status(404).json({
