@@ -19,6 +19,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    if (err.response?.status === 403 && err.response?.data?.code === 'PASSWORD_CHANGE_REQUIRED') {
+      const currentPath = window.location.pathname || '';
+      if (currentPath !== '/force-password-change') {
+        window.location.href = '/force-password-change';
+      }
+      return Promise.reject(err);
+    }
+
     if (err.response?.status === 401) {
       const reqUrl = String(err.config?.url || '');
       const currentPath = window.location.pathname || '';

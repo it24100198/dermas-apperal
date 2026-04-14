@@ -136,6 +136,7 @@ export async function bootstrapAdmin(req, res) {
         email,
         name: 'Production Admin',
         password: passwordHash,
+        mustChangePassword: false,
         role: 'admin',
         isActive: true,
       },

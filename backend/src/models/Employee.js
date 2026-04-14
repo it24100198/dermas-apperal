@@ -11,6 +11,7 @@ const employeeSchema = new mongoose.Schema(
       enum: ROLE_VALUES,
       default: ROLES.OPERATOR,
     },
+    salary: { type: Number, min: 0, default: 0 },
     name: { type: String, trim: true },
     phone: { type: String, trim: true },
   },

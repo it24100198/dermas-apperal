@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
@@ -65,6 +65,7 @@ import Register from './pages/Register';
 import RequestStatus from './pages/RequestStatus';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import ForcePasswordChange from './pages/ForcePasswordChange';
 import { ROLES } from './utils/roles';
 
 const queryClient = new QueryClient({
@@ -83,8 +84,12 @@ function AuthLoadingFallback() {
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <AuthLoadingFallback />;
   if (!user) return <Navigate to="/welcome" replace />;
+  if (user.mustChangePassword && location.pathname !== '/force-password-change') {
+    return <Navigate to="/force-password-change" replace />;
+  }
   return children;
 }
 
@@ -92,6 +97,7 @@ function RoleRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoadingFallback />;
   if (!user) return <Navigate to="/welcome" replace />;
+  if (user.mustChangePassword) return <Navigate to="/force-password-change" replace />;
   if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   return children;
 }
@@ -99,7 +105,18 @@ function RoleRoute({ children, allowedRoles }) {
 function PublicRoute({ children, redirectTo = '/' }) {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoadingFallback />;
-  if (user) return <Navigate to={redirectTo} replace />;
+  if (user) {
+    if (user.mustChangePassword) return <Navigate to="/force-password-change" replace />;
+    return <Navigate to={redirectTo} replace />;
+  }
+  return children;
+}
+
+function ForcePasswordChangeRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <AuthLoadingFallback />;
+  if (!user) return <Navigate to="/welcome" replace />;
+  if (!user.mustChangePassword) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -123,6 +140,7 @@ function AppRoutes() {
       <Route path="/request-status" element={<PublicRoute><RequestStatus /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+      <Route path="force-password-change" element={<ForcePasswordChangeRoute><ForcePasswordChange /></ForcePasswordChangeRoute>} />
       <Route path="/supervisor/login" element={<PublicRoute><SupervisorLogin /></PublicRoute>} />
       <Route
         path="/supervisor"

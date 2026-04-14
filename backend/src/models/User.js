@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
       systemAlerts: { type: Boolean, default: true },
       darkMode: { type: Boolean, default: false },
     },
+    mustChangePassword: { type: Boolean, default: false },
     role: { type: String, enum: ROLE_VALUES, default: ROLES.EMPLOYEE },
     isActive: { type: Boolean, default: true },
   },

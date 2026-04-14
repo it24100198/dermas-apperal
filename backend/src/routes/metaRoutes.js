@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { Material, Product, Employee, ProductionSection, User } from '../models/index.js';
 import { ROLES } from '../config/roles.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -18,6 +19,33 @@ router.get('/materials', async (req, res, next) => {
 });
 
 const MATERIAL_TYPES = ['fabric', 'accessory', 'etc'];
+
+function generateTemporaryPassword() {
+  const lowers = 'abcdefghijkmnopqrstuvwxyz';
+  const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const numbers = '23456789';
+  const symbols = '!@#$%^&*()-_=+?';
+  const all = `${lowers}${uppers}${numbers}${symbols}`;
+
+  const pick = (charset) => charset[crypto.randomInt(0, charset.length)];
+  const chars = [
+    pick(lowers),
+    pick(uppers),
+    pick(numbers),
+    pick(symbols),
+  ];
+
+  for (let i = chars.length; i < 14; i += 1) {
+    chars.push(pick(all));
+  }
+
+  for (let i = chars.length - 1; i > 0; i -= 1) {
+    const j = crypto.randomInt(0, i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join('');
+}
 
 router.post('/materials', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
@@ -103,16 +131,23 @@ router.post('/employees', requireRole('admin', 'manager'), async (req, res, next
     const {
       name,
       email,
-      password,
       role = 'operator',
       phone = '',
       productionSectionId = null,
+      salary = 0,
       isActive = true,
     } = req.body || {};
 
-    if (!name?.trim() || !email?.trim() || !password?.trim()) {
-      return res.status(400).json({ error: 'Name, email and password are required' });
+    if (!name?.trim() || !email?.trim()) {
+      return res.status(400).json({ error: 'Name and email are required' });
     }
+
+    const normalizedSalary = Number(salary);
+    if (!Number.isFinite(normalizedSalary) || normalizedSalary < 0) {
+      return res.status(400).json({ error: 'Salary must be a positive number or zero' });
+    }
+
+    const temporaryPassword = generateTemporaryPassword();
 
     const exists = await User.findOne({ email: email.trim().toLowerCase() }).lean();
     if (exists) return res.status(400).json({ error: 'Email already exists' });
@@ -120,7 +155,8 @@ router.post('/employees', requireRole('admin', 'manager'), async (req, res, next
     const user = await User.create({
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      password: password.trim(),
+      password: temporaryPassword,
+      mustChangePassword: true,
       role: mapEmployeeRoleToUserRole(role),
       isActive: Boolean(isActive),
     });
@@ -129,15 +165,20 @@ router.post('/employees', requireRole('admin', 'manager'), async (req, res, next
       userId: user._id,
       productionSectionId: productionSectionId || null,
       role,
+      salary: normalizedSalary,
       name: name.trim(),
       phone: phone?.trim() || '',
     });
 
     const populated = await Employee.findById(employee._id)
       .populate('productionSectionId', 'name slug')
-      .populate('userId', 'email name role isActive')
+      .populate('userId', 'email name role isActive mustChangePassword')
       .lean();
-    res.status(201).json(populated);
+    res.status(201).json({
+      employee: populated,
+      temporaryPassword,
+      passwordChangeRequired: true,
+    });
   } catch (err) {
     next(err);
   }
@@ -157,6 +198,7 @@ router.put('/employees/:id', requireRole('admin', 'manager'), async (req, res, n
       password,
       role,
       phone,
+      salary,
       productionSectionId,
       isActive,
     } = req.body || {};
@@ -179,6 +221,13 @@ router.put('/employees/:id', requireRole('admin', 'manager'), async (req, res, n
       user.role = mapEmployeeRoleToUserRole(role);
     }
     if (phone != null) employee.phone = String(phone).trim();
+    if (salary != null) {
+      const normalizedSalary = Number(salary);
+      if (!Number.isFinite(normalizedSalary) || normalizedSalary < 0) {
+        return res.status(400).json({ error: 'Salary must be a positive number or zero' });
+      }
+      employee.salary = normalizedSalary;
+    }
     if (productionSectionId !== undefined) employee.productionSectionId = productionSectionId || null;
     if (isActive !== undefined) user.isActive = Boolean(isActive);
 
@@ -187,7 +236,7 @@ router.put('/employees/:id', requireRole('admin', 'manager'), async (req, res, n
 
     const populated = await Employee.findById(employee._id)
       .populate('productionSectionId', 'name slug')
-      .populate('userId', 'email name role isActive')
+      .populate('userId', 'email name role isActive mustChangePassword')
       .lean();
     res.json(populated);
   } catch (err) {

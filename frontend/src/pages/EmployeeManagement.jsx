@@ -23,10 +23,9 @@ const PAGE_SIZE = 8;
 const emptyForm = {
   name: '',
   email: '',
-  password: '',
-  confirmPassword: '',
   role: 'operator',
   phone: '',
+  salary: '0',
   productionSectionId: '',
   isActive: true,
 };
@@ -65,6 +64,7 @@ export default function EmployeeManagement() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
+  const [creationSuccess, setCreationSuccess] = useState(null);
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees'],
@@ -111,12 +111,17 @@ export default function EmployeeManagement() {
 
   const createMutation = useMutation({
     mutationFn: (body) => createEmployee(body),
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['employees'] });
       setOpen(false);
       setEditing(null);
       setForm(emptyForm);
       setError('');
+      setCreationSuccess({
+        fullName: res?.data?.employee?.name || '',
+        email: res?.data?.employee?.userId?.email || res?.data?.employee?.email || '',
+        temporaryPassword: res?.data?.temporaryPassword || '',
+      });
     },
     onError: (err) => setError(err.response?.data?.error || err.message),
   });
@@ -151,10 +156,9 @@ export default function EmployeeManagement() {
     setForm({
       name: emp.name || emp.userId?.name || '',
       email: emp.userId?.email || '',
-      password: '',
-      confirmPassword: '',
       role: emp.role || 'operator',
       phone: emp.phone || '',
+      salary: String(emp.salary ?? '0'),
       productionSectionId: emp.productionSectionId?._id || '',
       isActive: !!emp.userId?.isActive,
     });
@@ -183,6 +187,7 @@ export default function EmployeeManagement() {
       'Name',
       'Email',
       'Phone',
+      'Salary',
       'Role',
       'Section',
       'Status',
@@ -194,6 +199,7 @@ export default function EmployeeManagement() {
       emp.name || emp.userId?.name || '',
       emp.userId?.email || '',
       emp.phone || '',
+      Number(emp.salary || 0).toFixed(2),
       formatRoleLabel(emp.role),
       emp.productionSectionId?.name || '',
       emp.userId?.isActive ? 'Active' : 'Inactive',
@@ -224,7 +230,7 @@ export default function EmployeeManagement() {
     const trimmedName = form.name.trim();
     const trimmedEmail = form.email.trim();
     const trimmedPhone = form.phone.trim();
-    const trimmedPassword = form.password.trim();
+    const parsedSalary = Number(form.salary);
 
     if (!trimmedName) nextErrors.name = 'Name is required';
     if (!trimmedEmail) {
@@ -239,25 +245,13 @@ export default function EmployeeManagement() {
 
     if (!form.role) nextErrors.role = 'Role is required';
 
+    if (!Number.isFinite(parsedSalary) || parsedSalary < 0) {
+      nextErrors.salary = 'Salary must be a positive number or zero';
+    }
+
     const requiresSection = SUPERVISOR_ROLES.includes(form.role);
     if (requiresSection && !form.productionSectionId) {
       nextErrors.productionSectionId = 'Section is required for supervisor roles';
-    }
-
-    if (!editing && !trimmedPassword) {
-      nextErrors.password = 'Password is required';
-    }
-
-    if (trimmedPassword && trimmedPassword.length < 6) {
-      nextErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (trimmedPassword || !editing) {
-      if (!form.confirmPassword.trim()) {
-        nextErrors.confirmPassword = 'Confirm password is required';
-      } else if (trimmedPassword !== form.confirmPassword.trim()) {
-        nextErrors.confirmPassword = 'Passwords do not match';
-      }
     }
 
     setFieldErrors(nextErrors);
@@ -274,15 +268,10 @@ export default function EmployeeManagement() {
       email: form.email.trim(),
       role: form.role,
       phone: form.phone.trim(),
+      salary: Number(form.salary),
       productionSectionId: form.productionSectionId || null,
       isActive: form.isActive,
     };
-    if (form.password.trim()) body.password = form.password.trim();
-
-    if (!editing && !body.password) {
-      setError('Password is required for new employee');
-      return;
-    }
 
     if (editing) {
       updateMutation.mutate({ id: editing._id, body });
@@ -427,6 +416,7 @@ export default function EmployeeManagement() {
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Phone</th>
+                    <th className="px-4 py-3">Salary</th>
                     <th className="px-4 py-3">Role</th>
                     <th className="px-4 py-3">Section</th>
                     <th className="px-4 py-3">Status</th>
@@ -441,6 +431,7 @@ export default function EmployeeManagement() {
                       <td className="px-4 py-3 font-medium">{emp.name || emp.userId?.name || '—'}</td>
                       <td className="px-4 py-3">{emp.userId?.email || '—'}</td>
                       <td className="px-4 py-3">{emp.phone || '—'}</td>
+                      <td className="px-4 py-3">Rs. {Number(emp.salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">{formatRoleLabel(emp.role)}</td>
                       <td className="px-4 py-3">{emp.productionSectionId?.name || '—'}</td>
                       <td className="px-4 py-3">
@@ -589,6 +580,20 @@ export default function EmployeeManagement() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Salary</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.salary}
+                    onChange={(e) => onFormFieldChange('salary', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    placeholder="0.00"
+                  />
+                  {fieldErrors.salary && <p className="text-xs text-red-600 mt-1">{fieldErrors.salary}</p>}
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Section</label>
                   <select
                     value={form.productionSectionId}
@@ -602,32 +607,6 @@ export default function EmployeeManagement() {
                   </select>
                   <p className="text-xs text-slate-500 mt-1">{sectionHint}</p>
                   {fieldErrors.productionSectionId && <p className="text-xs text-red-600 mt-1">{fieldErrors.productionSectionId}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {editing ? 'New Password (Optional)' : 'Password'}
-                  </label>
-                  <input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => onFormFieldChange('password', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                    autoComplete="new-password"
-                  />
-                  {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={(e) => onFormFieldChange('confirmPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                    autoComplete="new-password"
-                  />
-                  {fieldErrors.confirmPassword && <p className="text-xs text-red-600 mt-1">{fieldErrors.confirmPassword}</p>}
                 </div>
               </div>
 
@@ -682,6 +661,10 @@ export default function EmployeeManagement() {
                 <p className="font-medium text-slate-700">{viewing.phone || '—'}</p>
               </div>
               <div>
+                <p className="text-xs text-slate-500 mb-1">Salary</p>
+                <p className="font-medium text-slate-700">Rs. {Number(viewing.salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+              <div>
                 <p className="text-xs text-slate-500 mb-1">Role</p>
                 <p className="font-medium text-slate-700">{formatRoleLabel(viewing.role)}</p>
               </div>
@@ -712,6 +695,37 @@ export default function EmployeeManagement() {
                 className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
               >
                 Edit Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {creationSuccess && (
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg shadow-xl">
+            <div className="p-4 border-b border-slate-200">
+              <h2 className="font-semibold text-slate-800">Employee Created Successfully</h2>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-600">
+                Temporary login password for <span className="font-semibold text-slate-800">{creationSuccess.fullName || 'new employee'}</span>:
+              </p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="text-xs text-amber-700 mb-1">Temporary Password (showing only once)</p>
+                <p className="text-lg font-semibold tracking-wide text-amber-900 break-all">{creationSuccess.temporaryPassword || 'Not available'}</p>
+              </div>
+              <p className="text-sm text-slate-600">
+                This employee must change this password on first login before accessing the dashboard.
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCreationSuccess(null)}
+                className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
+              >
+                Done
               </button>
             </div>
           </div>

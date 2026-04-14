@@ -51,7 +51,7 @@ export default function Login() {
     try {
       const { data } = await apiLogin(form.email.trim(), form.password);
       login(data.user, data.token, form.rememberMe);
-      navigate('/');
+      navigate(data.user?.mustChangePassword ? '/force-password-change' : '/');
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
     } finally {

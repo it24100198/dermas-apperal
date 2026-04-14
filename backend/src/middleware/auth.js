@@ -16,6 +16,19 @@ export function requireAuth(req, res, next) {
         if (!user || !user.isActive) {
           return res.status(401).json({ error: 'Invalid or inactive user' });
         }
+
+        const normalizedPath = String(req.path || '').toLowerCase();
+        const isPasswordChangeRoute = normalizedPath === '/password' && req.method === 'PUT';
+        const isAuthMeRoute = normalizedPath === '/me';
+        const isLogoutRoute = normalizedPath === '/logout';
+
+        if (user.mustChangePassword && !isPasswordChangeRoute && !isAuthMeRoute && !isLogoutRoute) {
+          return res.status(403).json({
+            error: 'Password change required before continuing',
+            code: 'PASSWORD_CHANGE_REQUIRED',
+          });
+        }
+
         req.user = user;
         next();
       })
