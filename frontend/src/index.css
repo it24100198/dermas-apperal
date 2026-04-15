@@ -11,7 +11,7 @@ body {
   margin: 0;
   font-family: Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   color: #0f172a;
   background:
     radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 28%),

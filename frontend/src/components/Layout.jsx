@@ -159,7 +159,8 @@ const sampleNotifications = [
 ];
 
 export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
   const [activeModule, setActiveModule] = useState('expense');
   const [aiOpen, setAiOpen] = useState(true);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -215,6 +216,21 @@ export default function Layout() {
   }, [avatarUrl]);
 
   useEffect(() => {
+    const syncViewport = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+      setSidebarOpen((prev) => {
+        if (desktop) return true;
+        return prev;
+      });
+    };
+
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
+
+  useEffect(() => {
     if (visibleModule[activeModule]) return;
     const fallback = ['expense', 'employee', 'purchase', 'manufacturing', 'stock', 'sales', 'orderTracking']
       .find((moduleKey) => visibleModule[moduleKey]) || null;
@@ -230,12 +246,26 @@ export default function Layout() {
     setActiveModule(moduleKey);
   };
 
+  const handleSidebarNavClick = (event) => {
+    if (isDesktop) return;
+    if (event.target.closest('a')) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100">
+      {!isDesktop && sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-900/40"
+        />
+      )}
       {/* Sidebar - dark like screenshot */}
       <aside
-        className={`${sidebarOpen ? 'w-56' : 'w-16'
-          } bg-slate-800 text-white flex flex-col transition-all duration-200 overflow-hidden`}
+        className={`fixed inset-y-0 left-0 z-40 w-56 bg-slate-800 text-white flex flex-col overflow-hidden transition-transform duration-200 lg:static lg:z-auto lg:transition-all ${sidebarOpen ? 'translate-x-0 lg:w-56' : '-translate-x-full lg:translate-x-0 lg:w-16'}`}
       >
         <div className={`p-4 border-b border-slate-700 flex items-center gap-2 min-h-[52px] ${sidebarOpen ? '' : 'justify-center'}`}>
           <img
@@ -249,7 +279,7 @@ export default function Layout() {
             </span>
           )}
         </div>
-        <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden" onClick={handleSidebarNavClick}>
           <div className="px-3 mb-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
             {sidebarOpen && 'Quick Access'}
           </div>
@@ -624,23 +654,23 @@ export default function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-4 shadow-sm flex-shrink-0">
+        <header className="bg-white border-b border-slate-200 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 shadow-sm flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
             aria-label="Toggle sidebar"
           >
             <i className="bi bi-list text-xl" />
           </button>
-          <div className="flex-1 max-w-md">
+          <div className="hidden md:block flex-1 max-w-md">
             <input
               type="search"
               placeholder="Search..."
               className="w-full px-3 py-2 pl-9 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 focus:bg-white"
             />
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" aria-label="Apps">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <button className="hidden sm:inline-flex p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" aria-label="Apps">
               <i className="bi bi-grid-3x3-gap text-lg" />
             </button>
             <div className="relative" ref={notificationRef}>
@@ -715,7 +745,7 @@ export default function Layout() {
             <button
               type="button"
               onClick={() => navigate('/account-settings')}
-              className="relative z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:translate-y-0 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+              className="hidden sm:inline-flex relative z-20 h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:translate-y-0 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
               aria-label="Open account settings"
               title="Open account settings"
             >
@@ -788,7 +818,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 p-2 sm:p-4 lg:p-5 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
       </div>

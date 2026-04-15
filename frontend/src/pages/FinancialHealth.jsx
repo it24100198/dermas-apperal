@@ -310,7 +310,7 @@ export default function FinancialHealth() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
             <FilterSelect label="Year" value={year} onChange={(value) => setYear(Number(value))} options={YEAR_OPTIONS.map((option) => ({ value: option, label: option }))} />
             <FilterSelect label="Month" value={month} onChange={setMonth} options={[{ value: '', label: 'All months' }, ...MONTHS.map((label, index) => ({ value: String(index + 1), label }))]} />
             <FilterSelect label="Category" value={category} onChange={setCategory} options={[{ value: '', label: 'All categories' }, ...categoryOptions.map((option) => ({ value: option._id, label: option.name }))]} />
@@ -508,13 +508,13 @@ export default function FinancialHealth() {
             </button>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
             {isLoading ? (
               <div className="p-10 text-center text-slate-400">Loading recent expenses...</div>
             ) : recentExpenses.length === 0 ? (
               <div className="p-10 text-center text-slate-400">No expenses found for the selected filters.</div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[680px] text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Date</th>
@@ -585,12 +585,12 @@ export default function FinancialHealth() {
 
 function FilterSelect({ label, value, onChange, options }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+    <label className="flex w-full flex-col gap-1 text-xs font-medium text-slate-500 lg:w-auto">
       <span>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-w-[150px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition sm:min-w-[150px] sm:w-auto focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
       >
         {options.map((option) => (
           <option key={String(option.value)} value={option.value}>
