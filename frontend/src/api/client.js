@@ -13,6 +13,16 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getAuthToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Let the browser set multipart boundaries for FormData payloads.
+  if (config.data instanceof FormData && config.headers) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('Content-Type', undefined);
+    } else {
+      delete config.headers['Content-Type'];
+    }
+  }
+
   return config;
 });
 
