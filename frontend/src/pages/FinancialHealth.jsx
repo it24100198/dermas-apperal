@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -95,19 +95,18 @@ function ProgressRow({ label, value, note, accent, progress }) {
 }
 
 export default function FinancialHealth() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
-  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 640 : false));
   const [year, setYear] = useState(currentYear);
-  const [month, setMonth] = useState('');
-  const [category, setCategory] = useState('');
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 640);
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+  const [month, setMonth] = useState('');
+  const [category, setCategory] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['financial-health', year],
@@ -291,8 +290,6 @@ export default function FinancialHealth() {
   ];
 
   const sidebarLabel = month ? MONTHS[Number(month) - 1] : 'All months';
-  const pieInnerRadius = isMobile ? 38 : 56;
-  const pieOuterRadius = isMobile ? 62 : 84;
 
   return (
     <div className="space-y-5 pb-8">
@@ -373,7 +370,7 @@ export default function FinancialHealth() {
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">{year}</span>
           </div>
-          <div className="mt-4 h-[250px] sm:h-[320px]">
+          <div className="mt-4 h-[240px] sm:h-[320px]">
             {isLoading ? (
               <div className="flex h-full items-center justify-center rounded-2xl bg-slate-50 text-slate-400">Loading financial overview...</div>
             ) : !chartHasData ? (
@@ -383,7 +380,7 @@ export default function FinancialHealth() {
                 <p className="mt-1 text-xs text-slate-400">Add sales, expenses, or purchase records to populate this chart.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={220} minHeight={190} debounce={120}>
+              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={expenseSummaryMonthly} margin={{ top: 10, right: 18, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
@@ -473,20 +470,21 @@ export default function FinancialHealth() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Expense mix</p>
             <h3 className="mt-1 text-lg font-semibold text-slate-950">Category breakdown</h3>
-            <div className="mt-4 h-[200px] sm:h-[220px]">
+            <div className="mt-4 h-[180px] sm:h-[220px]">
               {expenseCategoryBreakdown.length === 0 ? (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
                   No expense categories found for the selected filters.
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%" minWidth={220} minHeight={170} debounce={120}>
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={expenseCategoryBreakdown} dataKey="value" nameKey="name" innerRadius={pieInnerRadius} outerRadius={pieOuterRadius} paddingAngle={3}>
+                    <Pie data={expenseCategoryBreakdown} dataKey="value" nameKey="name" innerRadius={isMobile ? 32 : 56} outerRadius={isMobile ? 64 : 84} paddingAngle={3}>
                       {expenseCategoryBreakdown.map((entry) => (
                         <Cell key={entry.name} fill={entry.fill} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => formatCurrency(value)} />
+                    {!isMobile && <Legend />}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -559,7 +557,7 @@ export default function FinancialHealth() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Monthly trend</p>
           <h3 className="mt-1 text-lg font-semibold text-slate-950">Expense movement and sales context</h3>
-          <div className="mt-4 h-[230px] sm:h-[280px]">
+          <div className="mt-4 h-[200px] sm:h-[280px]">
             {isLoading ? (
               <div className="flex h-full items-center justify-center rounded-2xl bg-slate-50 text-slate-400">Loading trend chart...</div>
             ) : !chartHasData ? (
@@ -567,7 +565,7 @@ export default function FinancialHealth() {
                 No monthly data to display.
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={220} minHeight={180} debounce={120}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={expenseSummaryMonthly} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} />
