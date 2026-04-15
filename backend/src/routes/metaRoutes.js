@@ -21,6 +21,16 @@ router.get('/materials', async (req, res, next) => {
 const MATERIAL_TYPES = ['fabric', 'accessory', 'etc'];
 const PRODUCT_CLASSIFICATIONS = ['normal', 'damage'];
 const PRODUCT_STATUSES = ['draft', 'active', 'inactive'];
+const SECTION_TYPES = ['line', 'department'];
+
+function slugifySectionName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
 
 function sanitizeProductPayload(payload = {}, { partial = false } = {}) {
   const next = {};
@@ -80,6 +90,50 @@ function sanitizeProductPayload(payload = {}, { partial = false } = {}) {
 
   if (partial && Object.keys(next).length === 0) {
     throw new Error('At least one product field is required');
+  }
+
+  return next;
+}
+
+function sanitizeSectionPayload(payload = {}, { partial = false } = {}) {
+  const next = {};
+
+  if (payload.name !== undefined) {
+    const value = String(payload.name || '').trim();
+    if (!value) {
+      throw new Error('Name is required');
+    }
+    next.name = value;
+  } else if (!partial) {
+    throw new Error('Name is required');
+  }
+
+  if (payload.slug !== undefined) {
+    const value = String(payload.slug || '').trim();
+    if (!value) {
+      throw new Error('Slug is required');
+    }
+    next.slug = value;
+  }
+
+  if (payload.type !== undefined) {
+    const value = String(payload.type || '').trim().toLowerCase();
+    if (!SECTION_TYPES.includes(value)) {
+      throw new Error(`type must be one of: ${SECTION_TYPES.join(', ')}`);
+    }
+    next.type = value;
+  } else if (!partial) {
+    next.type = 'line';
+  }
+
+  if (payload.isActive !== undefined) {
+    next.isActive = Boolean(payload.isActive);
+  } else if (!partial) {
+    next.isActive = true;
+  }
+
+  if (partial && Object.keys(next).length === 0) {
+    throw new Error('At least one section field is required');
   }
 
   return next;
@@ -373,7 +427,10 @@ router.delete('/employees/:id', requireRole('admin'), async (req, res, next) => 
 router.get('/sections', async (req, res, next) => {
   try {
     const type = req.query.type;
-    const query = type ? { type, isActive: true } : { isActive: true };
+    const includeInactive = String(req.query.includeInactive || '').toLowerCase() === 'true';
+    const query = {};
+    if (type) query.type = type;
+    if (!includeInactive) query.isActive = true;
     const sections = await ProductionSection.find(query)
       .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
       .sort({ name: 1 })
@@ -381,6 +438,38 @@ router.get('/sections', async (req, res, next) => {
     res.json(sections);
   } catch (err) {
     next(err);
+  }
+});
+
+router.post('/sections', requireRole('admin', 'manager'), async (req, res, next) => {
+  try {
+    const payload = sanitizeSectionPayload(req.body, { partial: false });
+    const slug = payload.slug || slugifySectionName(payload.name);
+
+    if (!slug) {
+      return res.status(400).json({ error: 'Slug could not be generated' });
+    }
+
+    const exists = await ProductionSection.findOne({ slug }).lean();
+    if (exists) {
+      return res.status(400).json({ error: 'Section slug already exists' });
+    }
+
+    const created = await ProductionSection.create({
+      name: payload.name,
+      slug,
+      type: payload.type,
+      isActive: payload.isActive,
+      parentId: req.body.parentId || null,
+    });
+
+    const populated = await ProductionSection.findById(created._id)
+      .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
+      .lean();
+
+    return res.status(201).json(populated);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'Unable to create section' });
   }
 });
 
@@ -394,9 +483,7 @@ router.put('/sections/:id', requireRole('admin', 'manager'), async (req, res, ne
     if (!section) return res.status(404).json({ error: 'Section not found' });
 
     const { supervisorEmployeeId } = req.body || {};
-    if (supervisorEmployeeId === undefined) {
-      return res.status(400).json({ error: 'supervisorEmployeeId is required (use null to clear)' });
-    }
+    const payload = sanitizeSectionPayload(req.body, { partial: true });
 
     const prevSupervisorId = section.supervisorEmployeeId;
 
@@ -414,8 +501,29 @@ router.put('/sections/:id', requireRole('admin', 'manager'), async (req, res, ne
       }
     }
 
-    if (!supervisorEmployeeId) {
+    if (supervisorEmployeeId === undefined && payload.isActive === undefined && payload.name === undefined && payload.slug === undefined && payload.type === undefined) {
+      return res.status(400).json({ error: 'No section changes provided' });
+    }
+
+    if (payload.name !== undefined) section.name = payload.name;
+    if (payload.slug !== undefined) {
+      const existingSlug = await ProductionSection.findOne({ slug: payload.slug, _id: { $ne: section._id } }).lean();
+      if (existingSlug) return res.status(400).json({ error: 'Section slug already exists' });
+      section.slug = payload.slug;
+    }
+    if (payload.type !== undefined) section.type = payload.type;
+    if (payload.isActive !== undefined) section.isActive = payload.isActive;
+
+    if (!supervisorEmployeeId && supervisorEmployeeId !== undefined) {
       section.supervisorEmployeeId = null;
+      await section.save();
+      const updated = await ProductionSection.findById(section._id)
+        .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })
+        .lean();
+      return res.json(updated);
+    }
+
+    if (supervisorEmployeeId === undefined) {
       await section.save();
       const updated = await ProductionSection.findById(section._id)
         .populate({ path: 'supervisorEmployeeId', select: 'name role phone userId', populate: { path: 'userId', select: 'email name' } })

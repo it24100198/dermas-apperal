@@ -152,6 +152,7 @@ export const createManufacturingProduct = (data) => api.post('/meta/products', d
 export const updateManufacturingProduct = (id, data) => api.put(`/meta/products/${id}`, data);
 export const getEmployees = () => api.get('/meta/employees');
 export const getSections = (params) => api.get('/meta/sections', { params });
+export const createSection = (data) => api.post('/meta/sections', data);
 export const updateSection = (id, data) => api.put(`/meta/sections/${id}`, data);
 export const createEmployee = (data) => api.post('/meta/employees', data);
 export const updateEmployee = (id, data) => api.put(`/meta/employees/${id}`, data);
