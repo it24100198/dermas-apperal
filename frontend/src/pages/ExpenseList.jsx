@@ -778,7 +778,7 @@ export default function ExpenseList() {
                     </div>
                   )}
                   <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
-                      {expensesLoading ? (
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-4 bg-slate-50 rounded-xl p-4">
