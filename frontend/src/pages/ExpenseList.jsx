@@ -76,7 +76,8 @@ const emptyForm = {
 export default function ExpenseList() {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [expensesLoading, setExpensesLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -103,12 +104,22 @@ export default function ExpenseList() {
   const fileRef = useRef();
 
   const load = async () => {
-    setLoading(true);
+    setExpensesLoading(true);
+    setCategoriesLoading(true);
     try {
-      const [exp, cats] = await Promise.all([getExpenses(), getCategories()]);
-      setExpenses(exp);
-      setCategories(cats);
-    } catch { } finally { setLoading(false); }
+      const [expResult, catsResult] = await Promise.allSettled([getExpenses(), getCategories()]);
+
+      if (expResult.status === 'fulfilled') {
+        setExpenses(expResult.value);
+      }
+
+      if (catsResult.status === 'fulfilled') {
+        setCategories(catsResult.value);
+      }
+    } finally {
+      setExpensesLoading(false);
+      setCategoriesLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -233,6 +244,7 @@ export default function ExpenseList() {
 
   const masterCategories = categories.filter((c) => !c.parentCategory);
   const subCategories = categories.filter((c) => c.parentCategory);
+  const categoriesStillLoading = categoriesLoading && categories.length === 0;
 
   const availableSubCategories = subCategories.filter((c) => {
     const parentId = c.parentCategory?._id || c.parentCategory;
@@ -401,6 +413,7 @@ export default function ExpenseList() {
               className={CONTROL_CLASS}
             >
               <option value="">All categories</option>
+              {categoriesStillLoading && <option value="" disabled>Loading categories...</option>}
               {masterCategories.map((category) => (
                 <option key={category._id} value={category._id}>{category.name}</option>
               ))}
@@ -765,7 +778,7 @@ export default function ExpenseList() {
                     </div>
                   )}
                   <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
-                </div>
+                      {expensesLoading ? (
               </div>
 
               <div className="flex flex-wrap gap-4 bg-slate-50 rounded-xl p-4">
