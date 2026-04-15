@@ -33,6 +33,66 @@ async function callAI(method, path, data = null) {
   }
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function buildWastageFallback(input = {}) {
+  const complexityMap = { low: 0.7, medium: 1.3, high: 2.1 };
+  const fabricMap = { cotton: 0.2, polyester: 0.6, denim: 1.2, silk: 1.6, blended: 0.9 };
+
+  const gsm = Number(input.gsm || 180);
+  const complexity = String(input.design_complexity || 'medium').toLowerCase();
+  const fabricType = String(input.fabric_type || 'cotton').toLowerCase();
+  const issuedQty = Number(input.issued_fabric_qty || 0);
+
+  const gsmWeight = clamp((gsm - 180) / 90, -1.5, 2.5);
+  const base = 5.1;
+  const predicted = base + gsmWeight + (complexityMap[complexity] || 1.3) + (fabricMap[fabricType] || 0.8);
+  const wastagePercent = Number(clamp(predicted, 2.5, 13.5).toFixed(2));
+
+  const riskLevel = wastagePercent >= 9.5 ? 'high' : wastagePercent >= 6.5 ? 'medium' : 'low';
+  const confidence = Number(clamp(89 - Math.abs(gsmWeight) * 6 - (complexity === 'high' ? 4 : 0), 62, 92).toFixed(1));
+  const fabricLossEstimate = issuedQty > 0 ? Number((issuedQty * (wastagePercent / 100)).toFixed(2)) : null;
+
+  return {
+    wastage_percent: wastagePercent,
+    fabric_loss_estimate: fabricLossEstimate,
+    confidence,
+    explanation: `${fabricType} fabric (GSM ${gsm}) with ${complexity} complexity is estimated to produce around ${wastagePercent}% wastage under current assumptions.`,
+    risk_level: riskLevel,
+    source: 'fallback',
+  };
+}
+
+function buildEfficiencyFallback(input = {}) {
+  const workersCount = Number(input.workers_count || 12);
+  const targetPerHour = Number(input.target_per_hour || 60);
+  const avgExperienceMonths = Number(input.avg_experience_months || 12);
+  const lineAgeDays = Number(input.line_age_days || 45);
+
+  const experienceBoost = clamp(avgExperienceMonths / 18, 0, 1.5) * 8;
+  const lineMaturity = clamp(lineAgeDays / 60, 0.2, 1.3) * 6;
+  const staffingFactor = clamp(workersCount / 12, 0.6, 1.4) * 7;
+  const predictedEfficiency = clamp(58 + experienceBoost + lineMaturity + staffingFactor, 45, 95);
+
+  const efficiencyPercent = Number(predictedEfficiency.toFixed(1));
+  const predictedHourlyOutput = Number((targetPerHour * (efficiencyPercent / 100)).toFixed(1));
+  const dailyOutputEstimate = Math.round(predictedHourlyOutput * 8);
+  const confidence = Number(clamp(87 - Math.abs(12 - workersCount) * 0.8, 60, 93).toFixed(1));
+  const status = efficiencyPercent >= 82 ? 'good' : efficiencyPercent >= 68 ? 'warning' : 'risk';
+
+  return {
+    efficiency_percent: efficiencyPercent,
+    predicted_hourly_output: predictedHourlyOutput,
+    daily_output_estimate: dailyOutputEstimate,
+    confidence,
+    explanation: `Based on ${workersCount} workers with ${avgExperienceMonths} months average experience, projected line efficiency is ${efficiencyPercent}% (~${dailyOutputEstimate} units/day).`,
+    status,
+    source: 'fallback',
+  };
+}
+
 // ─── Helper: enrich job with real DB data for AI context ────────────
 async function enrichJobContext(jobId) {
   try {
@@ -120,7 +180,7 @@ router.get('/dashboard', async (req, res) => {
 // ─────────────────────────────────────────────
 router.post('/predict/wastage', async (req, res) => {
   const result = await callAI('post', '/predict/wastage', req.body);
-  if (!result) return res.status(503).json({ error: 'AI service unavailable' });
+  const data = result || buildWastageFallback(req.body);
 
   // Log prediction
   await AIPredictionLog.create({
@@ -128,10 +188,10 @@ router.post('/predict/wastage', async (req, res) => {
     jobId: req.body.job_id || null,
     jobNumber: req.body.job_number || null,
     input: req.body,
-    output: result,
+    output: data,
   }).catch(() => {});
 
-  res.json(result);
+  res.json(data);
 });
 
 // ─────────────────────────────────────────────
@@ -139,17 +199,17 @@ router.post('/predict/wastage', async (req, res) => {
 // ─────────────────────────────────────────────
 router.post('/predict/efficiency', async (req, res) => {
   const result = await callAI('post', '/predict/efficiency', req.body);
-  if (!result) return res.status(503).json({ error: 'AI service unavailable' });
+  const data = result || buildEfficiencyFallback(req.body);
 
   await AIPredictionLog.create({
     type: 'efficiency',
     jobId: req.body.job_id || null,
     jobNumber: req.body.job_number || null,
     input: req.body,
-    output: result,
+    output: data,
   }).catch(() => {});
 
-  res.json(result);
+  res.json(data);
 });
 
 // ─────────────────────────────────────────────
