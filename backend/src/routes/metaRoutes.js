@@ -19,6 +19,71 @@ router.get('/materials', async (req, res, next) => {
 });
 
 const MATERIAL_TYPES = ['fabric', 'accessory', 'etc'];
+const PRODUCT_CLASSIFICATIONS = ['normal', 'damage'];
+const PRODUCT_STATUSES = ['draft', 'active', 'inactive'];
+
+function sanitizeProductPayload(payload = {}, { partial = false } = {}) {
+  const next = {};
+
+  const assignString = (key, label) => {
+    if (payload[key] === undefined) {
+      if (!partial) {
+        throw new Error(`${label} is required`);
+      }
+      return;
+    }
+
+    const value = String(payload[key] || '').trim();
+    if (!value) {
+      throw new Error(`${label} is required`);
+    }
+    next[key] = value;
+  };
+
+  assignString('name', 'Name');
+
+  if (payload.sku !== undefined) {
+    next.sku = String(payload.sku || '').trim();
+  } else if (!partial) {
+    next.sku = '';
+  }
+
+  if (payload.classification !== undefined) {
+    const value = String(payload.classification || '').trim().toLowerCase();
+    if (!PRODUCT_CLASSIFICATIONS.includes(value)) {
+      throw new Error(`classification must be one of: ${PRODUCT_CLASSIFICATIONS.join(', ')}`);
+    }
+    next.classification = value;
+  } else if (!partial) {
+    next.classification = 'normal';
+  }
+
+  if (payload.status !== undefined) {
+    const value = String(payload.status || '').trim().toLowerCase();
+    if (!PRODUCT_STATUSES.includes(value)) {
+      throw new Error(`status must be one of: ${PRODUCT_STATUSES.join(', ')}`);
+    }
+    next.status = value;
+  } else if (!partial) {
+    next.status = 'active';
+  }
+
+  if (payload.stockQty !== undefined) {
+    const value = Number(payload.stockQty);
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error('stockQty must be a non-negative number');
+    }
+    next.stockQty = value;
+  } else if (!partial) {
+    next.stockQty = 0;
+  }
+
+  if (partial && Object.keys(next).length === 0) {
+    throw new Error('At least one product field is required');
+  }
+
+  return next;
+}
 
 function generateTemporaryPassword() {
   const lowers = 'abcdefghijkmnopqrstuvwxyz';
@@ -95,6 +160,54 @@ router.get('/products', async (req, res, next) => {
     res.json(products);
   } catch (err) {
     next(err);
+  }
+});
+
+router.post('/products', async (req, res, next) => {
+  try {
+    const payload = sanitizeProductPayload(req.body, { partial: false });
+
+    if (payload.sku) {
+      const existing = await Product.findOne({ sku: payload.sku }).lean();
+      if (existing) {
+        return res.status(400).json({ error: 'SKU already exists' });
+      }
+    }
+
+    const created = await Product.create(payload);
+    return res.status(201).json(created.toObject());
+  } catch (err) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+    return next(err);
+  }
+});
+
+router.put('/products/:id', async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const payload = sanitizeProductPayload(req.body, { partial: true });
+
+    if (payload.sku) {
+      const existing = await Product.findOne({ sku: payload.sku, _id: { $ne: product._id } }).lean();
+      if (existing) {
+        return res.status(400).json({ error: 'SKU already exists' });
+      }
+    }
+
+    Object.assign(product, payload);
+    await product.save();
+    return res.json(product.toObject());
+  } catch (err) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+    return next(err);
   }
 });
 

@@ -116,7 +116,9 @@ export async function sendToCutting(jobId) {
 export async function getAssignLinesMeta() {
   const [lines, products] = await Promise.all([
     ProductionSection.find({ type: 'line', isActive: true }).sort({ name: 1 }).lean(),
-    Product.find({ classification: 'normal' }).sort({ name: 1 }).lean(),
+    Product.find({ classification: 'normal', status: 'active', stockQty: { $gt: 0 } })
+      .sort({ name: 1 })
+      .lean(),
   ]);
   return { lines, products };
 }

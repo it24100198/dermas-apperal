@@ -47,6 +47,7 @@ import MaterialIssuancePage from './pages/MaterialIssuance';
 import StockHistory from './pages/StockHistory';
 import BarcodeScanner from './pages/BarcodeScanner';
 import InventoryDashboard from './pages/InventoryDashboard';
+import StockProducts from './pages/StockProducts';
 import Quotations from './pages/Quotations';
 import SalesOrders from './pages/SalesOrders';
 import Invoices from './pages/Invoices';
@@ -208,6 +209,7 @@ function AppRoutes() {
         <Route path="stock/history"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><StockHistory /></RoleRoute>} />
         <Route path="stock/barcode"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.OPERATOR]}><BarcodeScanner /></RoleRoute>} />
         <Route path="stock/inventory"   element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><InventoryDashboard /></RoleRoute>} />
+        <Route path="stock/products"    element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><StockProducts /></RoleRoute>} />
         {/* Sales & POS */}
         <Route path="sales/quotations" element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><Quotations /></RoleRoute>} />
         <Route path="sales/orders"     element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR]}><SalesOrders /></RoleRoute>} />

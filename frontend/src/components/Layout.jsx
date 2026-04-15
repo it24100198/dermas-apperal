@@ -51,6 +51,7 @@ const purchaseItems = [
 
 const stockItems = [
   { to: '/stock/inventory',   label: 'Inventory Dashboard', icon: 'bi-speedometer2' },
+  { to: '/stock/products',    label: 'Products',            icon: 'bi-box-seam' },
   { to: '/stock/adjustments', label: 'Stock Adjustments', icon: 'bi-sliders' },
   { to: '/stock/issuance',    label: 'Material Issuance',  icon: 'bi-box-arrow-right' },
   { to: '/stock/history',    label: 'Stock History',      icon: 'bi-clock-history' },
