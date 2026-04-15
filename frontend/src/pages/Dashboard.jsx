@@ -516,11 +516,11 @@ export default function Dashboard() {
                 <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Revenue</span>
               </div>
             </div>
-            <div className="mt-5 h-[240px] sm:h-[320px]">
+            <div className="mt-5 min-h-[300px] h-[300px] md:h-[320px] lg:h-[360px]">
               {isLoading ? (
                 <div className="flex h-full items-center justify-center rounded-[1.5rem] bg-slate-50 text-slate-400">Loading analytics...</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                   <BarChart data={expenseMonthlyTotals} margin={{ top: 10, right: 18, left: -8, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
@@ -551,14 +551,14 @@ export default function Dashboard() {
               <div className="mt-5 space-y-5">
                 <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
                   <div className="space-y-4">
-                    <div className="mx-auto h-[180px] w-full max-w-[320px] overflow-visible sm:h-[220px]">
+                    <div className="mx-auto min-h-[280px] h-[280px] w-full md:h-[320px] lg:max-w-[320px] overflow-visible">
                       {isLoading ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading chart...</div>
                       ) : expenseCategoryData.length === 0 ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No expense data yet.</div>
                       ) : (
                         <div className="flex h-full items-center justify-center overflow-visible p-2">
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                             <PieChart>
                               <Pie
                                 data={expenseCategoryData}
@@ -566,8 +566,8 @@ export default function Dashboard() {
                                 nameKey="name"
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={isMobile ? 24 : 44}
-                                outerRadius={isMobile ? 48 : 72}
+                                innerRadius={isMobile ? 32 : 44}
+                                outerRadius={isMobile ? 56 : 72}
                                 paddingAngle={3}
                               >
                               {expenseCategoryData.map((entry, index) => (
@@ -598,14 +598,14 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Spend by Supplier</p>
                   <div className="mt-4 space-y-4">
-                    <div className="mx-auto h-[180px] w-full max-w-[320px] overflow-visible sm:h-[220px]">
+                    <div className="mx-auto min-h-[280px] h-[280px] w-full md:h-[320px] lg:max-w-[320px] overflow-visible">
                       {isLoading ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-slate-400">Loading supplier spend...</div>
                       ) : supplierSpendData.length === 0 ? (
                         <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">No supplier spend data yet.</div>
                       ) : (
                         <div className="flex h-full items-center justify-center overflow-visible p-2">
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                             <PieChart>
                               <Pie
                                 data={supplierSpendData}
@@ -613,8 +613,8 @@ export default function Dashboard() {
                                 nameKey="name"
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={isMobile ? 24 : 44}
-                                outerRadius={isMobile ? 48 : 72}
+                                innerRadius={isMobile ? 32 : 44}
+                                outerRadius={isMobile ? 56 : 72}
                                 paddingAngle={3}
                               >
                               {supplierSpendData.map((entry, index) => (
@@ -649,11 +649,11 @@ export default function Dashboard() {
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Collections</p>
                 <h3 className="mt-1 text-lg font-semibold text-slate-950">Revenue vs collections</h3>
               </div>
-              <div className="mt-4 h-[200px] sm:h-[230px]">
+              <div className="mt-4 min-h-[280px] h-[280px] md:h-[300px] lg:h-[280px]">
                 {isLoading ? (
                   <div className="flex h-full items-center justify-center rounded-[1.5rem] bg-slate-50 text-slate-400">Loading chart...</div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                     <AreaChart data={monthlyRevenueData} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
                       <defs>
                         <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
