@@ -167,9 +167,11 @@ export default function JobDetail() {
   const canSendToCutting = job.status === CAN_SEND_CUTTING;
   const canAssignLines = job.status === CAN_ASSIGN_LINES;
   const canSendToWashing = ['LINE_IN_PROGRESS', 'LINE_COMPLETED', 'WASHING_OUT'].includes(job.status);
+  const lines = meta?.lines || [];
+  const hasLines = lines.length > 0;
   const totalCutPieces = job.totalCutPieces ?? 0;
   const totalAssigned = (assignForm.assignments || []).reduce((s, a) => s + (a.assignedQuantity || 0), 0);
-  const assignValid = totalAssigned === totalCutPieces && totalCutPieces > 0 && assignForm.productId;
+  const assignValid = hasLines && totalAssigned === totalCutPieces && totalCutPieces > 0 && assignForm.productId;
   const currentStep = getCurrentStep(job.status);
   const availableToSend = Number(job.availableToSend || 0);
   const pendingNextStep = getPendingNextStep(job.status);
@@ -186,7 +188,7 @@ export default function JobDetail() {
 
 
   const handleAddLine = () => {
-    const lines = meta?.lines || [];
+    if (!hasLines) return;
     setAssignForm((f) => ({
       ...f,
       assignments: [...(f.assignments || []), { lineName: lines[0]?.name || '', assignedQuantity: 0 }],
@@ -223,7 +225,20 @@ export default function JobDetail() {
   const actions = [
     canSendToCutting && { id: 'send-cutting', label: 'Send to Cutting', icon: 'bi-send', primary: true, onClick: () => setConfirmSendCutting(true), loading: sendCuttingMutation.isPending },
     job.status === 'SENT_TO_CUTTING' && { id: 'cutting-details', label: 'Enter Cutting Details', icon: 'bi-pencil-square', onClick: () => navigate('/manufacturing/cutting') },
-    canAssignLines && { id: 'assign-line', label: 'Assign to Line', icon: 'bi-people', primary: true, onClick: () => { setAssignForm((f) => ({ ...f, showForm: true, assignments: [{ lineName: meta?.lines?.[0]?.name || '', assignedQuantity: 0 }] })); setActionModal('assign'); } },
+    canAssignLines && {
+      id: 'assign-line',
+      label: 'Assign to Line',
+      icon: 'bi-people',
+      primary: true,
+      onClick: () => {
+        setAssignForm((f) => ({
+          ...f,
+          showForm: true,
+          assignments: hasLines ? [{ lineName: lines[0]?.name || '', assignedQuantity: 0 }] : [],
+        }));
+        setActionModal('assign');
+      },
+    },
     // Pass jobId so HourlyProduction can preselect the job and show the table immediately.
     ['LINE_ASSIGNED', 'LINE_IN_PROGRESS'].includes(job.status) && { id: 'hourly', label: 'Hourly Output', icon: 'bi-clock', onClick: () => navigate(`/production/hourly?jobId=${job._id}`) },
     canSendToWashing && {
@@ -408,6 +423,18 @@ export default function JobDetail() {
               </button>
             </div>
             <form onSubmit={handleAssignSubmit} className="p-5 space-y-4">
+              {!hasLines && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  No active production lines found. Please add/activate line sections first.
+                  <button
+                    type="button"
+                    onClick={() => navigate('/manufacturing/sections')}
+                    className="ml-2 font-medium underline"
+                  >
+                    Open Sections
+                  </button>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Product *</label>
                 <select
@@ -428,8 +455,10 @@ export default function JobDetail() {
                     value={a.lineName}
                     onChange={(e) => handleAssignChange(idx, 'lineName', e.target.value)}
                     className="flex-1 px-3 py-2 border rounded-lg"
+                    disabled={!hasLines}
                   >
-                    {(meta?.lines || []).map((l) => (
+                    {!hasLines && <option value="">No active lines found</option>}
+                    {lines.map((l) => (
                       <option key={l._id} value={l.name}>{l.name}</option>
                     ))}
                   </select>
@@ -443,7 +472,14 @@ export default function JobDetail() {
                   />
                 </div>
               ))}
-              <button type="button" onClick={handleAddLine} className="text-blue-600 hover:underline text-sm">+ Add line</button>
+              <button
+                type="button"
+                onClick={handleAddLine}
+                disabled={!hasLines}
+                className="text-blue-600 hover:underline text-sm disabled:text-slate-400 disabled:no-underline"
+              >
+                + Add line
+              </button>
               {assignMutation.isError && <p className="text-red-600 text-sm">{assignMutation.error?.response?.data?.error || assignMutation.error?.message || 'Failed to save'}</p>}
               <div className="flex gap-2 pt-2">
                 <button type="submit" disabled={!assignValid || assignMutation.isPending} className="px-4 py-2 bg-slate-800 text-white rounded-lg disabled:opacity-50">
