@@ -7,11 +7,14 @@ import { useNavigation } from '@react-navigation/native';
 const ProfileScreen = () => {
     const { user, logout } = useContext(AuthContext);
     const navigation = useNavigation();
-    role: user?.role || 'Production Supervisor',
+    const mockUser = {
+        name: user?.name || 'Jane Doe',
+        email: user?.email || 'jane.doe@dermasapperal.com',
+        role: user?.role || 'Production Supervisor',
         employeeId: user?.employeeId || 'EMP-1042'
-};
+    };
 
-return (
+    return (
     <View style={styles.container}>
         <View style={styles.header}>
             <View style={styles.avatarContainer}>
