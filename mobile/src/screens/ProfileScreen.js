@@ -2,13 +2,11 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
-    const { user, logout } = useContext(AuthContext);
-
-    const mockUser = {
-        name: user?.name || 'Jane Doe',
-        email: user?.email || 'jane.doe@dermasapparel.com',
+  const { user, logout } = useContext(AuthContext);
+  const navigation = useNavigation();
         role: user?.role || 'Production Supervisor',
         employeeId: user?.employeeId || 'EMP-1042'
     };
@@ -39,17 +37,29 @@ const ProfileScreen = () => {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Settings</Text>
-                <View style={styles.card}>
-                    <TouchableOpacity style={styles.row}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#6B7280" />
-                        <Text style={styles.rowText}>Change Password</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
-                    </TouchableOpacity>
-                    <View style={styles.divider} />
-                    <TouchableOpacity style={styles.row}>
-                        <Ionicons name="notifications-outline" size={20} color="#6B7280" />
-                        <Text style={styles.rowText}>Notification Preferences</Text>
+        <Text style={styles.sectionTitle}>Settings & Modules</Text>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Transactions')}>
+            <Ionicons name="card-outline" size={20} color="#6B7280" />
+            <Text style={styles.rowText}>Financial Ledger</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Materials')}>
+            <Ionicons name="layers-outline" size={20} color="#6B7280" />
+            <Text style={styles.rowText}>Raw Materials</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('ProductionLogs')}>
+            <Ionicons name="stopwatch-outline" size={20} color="#6B7280" />
+            <Text style={styles.rowText}>Log Hourly Production</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity style={styles.row}>
+            <Ionicons name="notifications-outline" size={20} color="#6B7280" />
+            <Text style={styles.rowText}>Notification Preferences</Text>
                         <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
                     </TouchableOpacity>
                 </View>

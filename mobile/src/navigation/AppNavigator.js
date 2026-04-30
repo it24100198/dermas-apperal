@@ -13,6 +13,8 @@ import JobsScreen from '../screens/JobsScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import MaterialsScreen from '../screens/MaterialsScreen';
+import ProductionLogScreen from '../screens/ProductionLogScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -21,7 +23,9 @@ const MoreStackNav = createNativeStackNavigator();
 const MoreStack = () => (
     <MoreStackNav.Navigator screenOptions={{ headerShown: false }}>
         <MoreStackNav.Screen name="Profile" component={ProfileScreen} />
-        <MoreStackNav.Screen name="Transactions" component={TransactionsScreen} options={{ headerShown: true, title: 'Financial Ledger' }} />
+        <MoreStackNav.Screen name="Transactions" component={TransactionsScreen} options={{ headerShown: true, title: 'Financial Ledger', headerBackTitle: 'Back' }} />
+        <MoreStackNav.Screen name="Materials" component={MaterialsScreen} options={{ headerShown: true, title: 'Raw Materials', headerBackTitle: 'Back' }} />
+        <MoreStackNav.Screen name="ProductionLogs" component={ProductionLogScreen} options={{ headerShown: true, title: 'Hourly Production', headerBackTitle: 'Back' }} />
     </MoreStackNav.Navigator>
 );
 
