@@ -1,9 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Replace with your local machine's IP address if testing on a physical device
-// Keep localhost/10.0.2.2 if testing on simulators
-const BASE_URL = 'http://localhost:5000';
+// Using deployed backend URL as requested
+const BASE_URL = 'https://dermas-apperal-backend.vercel.app';
 
 const api = axios.create({
     baseURL: `${BASE_URL}/api`,
