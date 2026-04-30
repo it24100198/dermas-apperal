@@ -32,10 +32,13 @@ const MoreStack = () => (
 const AppTabs = () => (
     <Tab.Navigator
         screenOptions={({ route }) => ({
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700' },
             headerStyle: { backgroundColor: '#FFFFFF' },
             tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#E5E7EB' },
             tabBarActiveTintColor: '#3B82F6',
             tabBarInactiveTintColor: '#9CA3AF',
+            tabBarHideOnKeyboard: true,
             tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
 
