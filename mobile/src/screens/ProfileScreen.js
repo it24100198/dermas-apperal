@@ -5,72 +5,72 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigation = useNavigation();
-        role: user?.role || 'Production Supervisor',
+    const { user, logout } = useContext(AuthContext);
+    const navigation = useNavigation();
+    role: user?.role || 'Production Supervisor',
         employeeId: user?.employeeId || 'EMP-1042'
-    };
+};
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.avatarContainer}>
-                    <Text style={styles.avatarText}>{mockUser.name.charAt(0)}</Text>
-                </View>
-                <Text style={styles.name}>{mockUser.name}</Text>
-                <Text style={styles.role}>{mockUser.role}</Text>
+return (
+    <View style={styles.container}>
+        <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+                <Text style={styles.avatarText}>{mockUser.name.charAt(0)}</Text>
             </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Account Information</Text>
-                <View style={styles.card}>
-                    <View style={styles.row}>
-                        <Ionicons name="mail-outline" size={20} color="#6B7280" />
-                        <Text style={styles.rowText}>{mockUser.email}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.row}>
-                        <Ionicons name="id-card-outline" size={20} color="#6B7280" />
-                        <Text style={styles.rowText}>{mockUser.employeeId}</Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings & Modules</Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Transactions')}>
-            <Ionicons name="card-outline" size={20} color="#6B7280" />
-            <Text style={styles.rowText}>Financial Ledger</Text>
-            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Materials')}>
-            <Ionicons name="layers-outline" size={20} color="#6B7280" />
-            <Text style={styles.rowText}>Raw Materials</Text>
-            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('ProductionLogs')}>
-            <Ionicons name="stopwatch-outline" size={20} color="#6B7280" />
-            <Text style={styles.rowText}>Log Hourly Production</Text>
-            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="notifications-outline" size={20} color="#6B7280" />
-            <Text style={styles.rowText}>Notification Preferences</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-                <Ionicons name="log-out-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                <Text style={styles.logoutText}>Log Out</Text>
-            </TouchableOpacity>
+            <Text style={styles.name}>{mockUser.name}</Text>
+            <Text style={styles.role}>{mockUser.role}</Text>
         </View>
-    );
+
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account Information</Text>
+            <View style={styles.card}>
+                <View style={styles.row}>
+                    <Ionicons name="mail-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>{mockUser.email}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.row}>
+                    <Ionicons name="id-card-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>{mockUser.employeeId}</Text>
+                </View>
+            </View>
+        </View>
+
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Settings & Modules</Text>
+            <View style={styles.card}>
+                <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Transactions')}>
+                    <Ionicons name="card-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>Financial Ledger</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+                </TouchableOpacity>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Materials')}>
+                    <Ionicons name="layers-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>Raw Materials</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+                </TouchableOpacity>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('ProductionLogs')}>
+                    <Ionicons name="stopwatch-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>Log Hourly Production</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+                </TouchableOpacity>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.row}>
+                    <Ionicons name="notifications-outline" size={20} color="#6B7280" />
+                    <Text style={styles.rowText}>Notification Preferences</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#D1D5DB" style={styles.chevron} />
+                </TouchableOpacity>
+            </View>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <Ionicons name="log-out-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+            <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+    </View>
+);
 };
 
 const styles = StyleSheet.create({
