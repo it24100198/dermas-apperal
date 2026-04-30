@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import {
+    View,
+    Text,
+    FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    TouchableOpacity,
+    Alert,
+    Modal,
+    TextInput,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../api/axios';
+import { extractList, formatNumber, formatStatusLabel, getErrorMessage } from '../utils/mobile';
 
 const InventoryScreen = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
+    const [error, setError] = useState('');
 
     // Form State
     const [name, setName] = useState('');
@@ -20,15 +32,13 @@ const InventoryScreen = () => {
     const fetchInventory = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/products');
-            setProducts(response.data.data || response.data || []);
+            setError('');
+            const response = await api.get('/meta/products');
+            setProducts(extractList(response.data, ['products']));
         } catch (e) {
             console.error('Failed to fetch inventory', e);
-            // Mock data for display when server is offline
-            setProducts([
-                { _id: '1', name: 'Cotton T-Shirt', sku: 'TS-001', quantity: 150 },
-                { _id: '2', name: 'Denim Jeans', sku: 'JN-001', quantity: 85 },
-            ]);
+            setProducts([]);
+            setError(getErrorMessage(e, 'Unable to load products right now.'));
         } finally {
             setLoading(false);
         }
@@ -41,13 +51,14 @@ const InventoryScreen = () => {
         }
 
         try {
-            const response = await api.post('/products', {
-                name,
-                sku,
-                quantity: Number(quantity)
+            await api.post('/meta/products', {
+                name: name.trim(),
+                sku: sku.trim().toUpperCase(),
+                stockQty: Number(quantity),
+                classification: 'normal',
+                status: 'active',
             });
-            // Refresh list
-            fetchInventory();
+            await fetchInventory();
             setModalVisible(false);
             setName('');
             setSku('');
@@ -55,26 +66,24 @@ const InventoryScreen = () => {
             Alert.alert('Success', 'Product added successfully');
         } catch (e) {
             console.error('Failed to add product', e);
-            // Mocking Add
-            setProducts([{ _id: Date.now().toString(), name, sku, quantity: Number(quantity) }, ...products]);
-            setModalVisible(false);
+            Alert.alert('Unable to add product', getErrorMessage(e));
         }
     };
 
-    const handleDeleteProduct = (id) => {
-        Alert.alert('Delete', 'Are you sure you want to remove this product?', [
+    const handleToggleProductStatus = (item) => {
+        const nextStatus = item.status === 'inactive' ? 'active' : 'inactive';
+
+        Alert.alert('Update Product', `Set this product to ${nextStatus}?`, [
             { text: 'Cancel', style: 'cancel' },
             {
-                text: 'Delete',
-                style: 'destructive',
+                text: 'Confirm',
                 onPress: async () => {
                     try {
-                        await api.delete(`/products/${id}`);
-                        fetchInventory();
+                        await api.put(`/meta/products/${item._id}`, { status: nextStatus });
+                        await fetchInventory();
                     } catch (e) {
-                        console.error('Failed to delete', e);
-                        // Mocking delete
-                        setProducts(products.filter(p => p._id !== id));
+                        console.error('Failed to update product', e);
+                        Alert.alert('Unable to update product', getErrorMessage(e));
                     }
                 },
             },
@@ -84,17 +93,19 @@ const InventoryScreen = () => {
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.itemCard}
-            onLongPress={() => handleDeleteProduct(item._id)}
+            onLongPress={() => handleToggleProductStatus(item)}
             delayLongPress={500}
         >
             <View style={{ flex: 1 }}>
                 <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemSku}>SKU: {item.sku}</Text>
+                <Text style={styles.itemSku}>SKU: {item.sku || 'Not set'}</Text>
             </View>
-            <View style={styles.stockBadge}>
-                <Text style={styles.stockText}>{item.quantity} in stock</Text>
+            <View style={styles.rightContent}>
+                <View style={styles.stockBadge}>
+                    <Text style={styles.stockText}>{formatNumber(item.stockQty)} in stock</Text>
+                </View>
+                <Text style={styles.statusText}>{formatStatusLabel(item.status || 'draft')}</Text>
             </View>
-            <Ionicons name="chevron-forward-outline" size={20} color="#9CA3AF" style={{ marginLeft: 16 }} />
         </TouchableOpacity>
     );
 
@@ -110,6 +121,21 @@ const InventoryScreen = () => {
                     contentContainerStyle={styles.list}
                     refreshing={loading}
                     onRefresh={fetchInventory}
+                    ListHeaderComponent={(
+                        <View style={styles.headerCard}>
+                            <Text style={styles.headerTitle}>Product Inventory</Text>
+                            <Text style={styles.headerText}>
+                                Long press a product to archive or reactivate it.
+                            </Text>
+                            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                        </View>
+                    )}
+                    ListEmptyComponent={!loading ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>No products found</Text>
+                            <Text style={styles.emptyText}>Add a product to start tracking inventory.</Text>
+                        </View>
+                    ) : null}
                 />
             )}
 
@@ -169,11 +195,20 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F3F4F6' },
     list: { padding: 16 },
     itemCard: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+    headerCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12 },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+    headerText: { marginTop: 6, fontSize: 14, color: '#6B7280' },
+    errorText: { marginTop: 10, fontSize: 14, color: '#B91C1C' },
     itemName: { fontSize: 16, fontWeight: '600', color: '#111827' },
     itemSku: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+    rightContent: { alignItems: 'flex-end' },
     stockBadge: { backgroundColor: '#E0F2FE', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
     stockText: { color: '#0369A1', fontWeight: 'bold' },
+    statusText: { marginTop: 8, fontSize: 12, fontWeight: '600', color: '#6B7280' },
     fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: '#3B82F6', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
+    emptyState: { alignItems: 'center', paddingVertical: 48 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+    emptyText: { marginTop: 8, fontSize: 14, color: '#6B7280', textAlign: 'center' },
 
     // Modal Styles
     modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 16 },

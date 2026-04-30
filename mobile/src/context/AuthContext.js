@@ -8,16 +8,28 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const clearSession = async () => {
+        await AsyncStorage.multiRemove(['userToken', 'userData']);
+        setUser(null);
+    };
+
     const loadToken = async () => {
         try {
             const token = await AsyncStorage.getItem('userToken');
             const storedUser = await AsyncStorage.getItem('userData');
-            if (token && storedUser) {
-                // Validate token visually or hit a /me endpoint
-                setUser(JSON.parse(storedUser));
+
+            if (!token && !storedUser) {
+                setUser(null);
+                return;
             }
+
+            const response = await api.get('/auth/me');
+            const nextUser = response.data;
+            await AsyncStorage.setItem('userData', JSON.stringify(nextUser));
+            setUser(nextUser);
         } catch (e) {
-            console.error('Failed to load token', e);
+            console.error('Failed to restore session', e);
+            await clearSession();
         } finally {
             setIsLoading(false);
         }
@@ -30,11 +42,19 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const response = await api.post('/auth/login', { email, password });
-            const { token, user: userData } = response.data;
+            const { token, user: userData } = response.data || {};
 
-            await AsyncStorage.setItem('userToken', token);
-            await AsyncStorage.setItem('userData', JSON.stringify(userData));
-            setUser(userData);
+            if (token && userData) {
+                await AsyncStorage.setItem('userToken', token);
+                await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                setUser(userData);
+                return;
+            }
+
+            const meResponse = await api.get('/auth/me');
+            const nextUser = meResponse.data;
+            await AsyncStorage.setItem('userData', JSON.stringify(nextUser));
+            setUser(nextUser);
         } catch (e) {
             console.error('Login error', e);
             throw e;
@@ -43,11 +63,11 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userData');
-            setUser(null);
+            await api.post('/auth/logout');
         } catch (e) {
             console.error('Logout error', e);
+        } finally {
+            await clearSession();
         }
     };
 

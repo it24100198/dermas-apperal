@@ -27,7 +27,7 @@ export async function login(req, res) {
   try {
     const { user, token } = await authService.login(req.body.email, req.body.password);
     res.cookie('auth_token', token, getAuthCookieOptions());
-    return res.json({ user });
+    return res.json({ user, token });
   } catch (err) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }

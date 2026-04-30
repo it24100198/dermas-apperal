@@ -1,17 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import {
+    View,
+    Text,
+    FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    TouchableOpacity,
+    Alert,
+    Modal,
+    TextInput,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../api/axios';
+import { extractList, formatDateLabel, formatStatusLabel, getErrorMessage } from '../utils/mobile';
+
+const ORDER_STATUSES = ['confirmed', 'in_production', 'cutting', 'washing', 'qc', 'packing', 'delivered'];
+
+function getDefaultDeliveryDate() {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString().slice(0, 10);
+}
 
 const OrdersScreen = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
+    const [error, setError] = useState('');
 
     // Form State
     const [customerName, setCustomerName] = useState('');
-    const [totalAmount, setTotalAmount] = useState('');
-    const [status, setStatus] = useState('Pending');
+    const [customerContact, setCustomerContact] = useState('');
+    const [productDescription, setProductDescription] = useState('');
+    const [quantity, setQuantity] = useState('');
+    const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(getDefaultDeliveryDate());
 
     useEffect(() => {
         fetchOrders();
@@ -20,67 +42,69 @@ const OrdersScreen = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
+            setError('');
             const response = await api.get('/orders');
-            setOrders(response.data.data || response.data || []);
+            setOrders(extractList(response.data, ['orders']));
         } catch (e) {
             console.error('Failed to fetch orders', e);
-            setOrders([
-                { _id: '1', orderNo: 'ORD-001', customerName: 'Acme Corp', totalAmount: 1500, status: 'Pending' },
-                { _id: '2', orderNo: 'ORD-002', customerName: 'Globex Inc', totalAmount: 4200, status: 'Shipped' },
-            ]);
+            setOrders([]);
+            setError(getErrorMessage(e, 'Unable to load customer orders right now.'));
         } finally {
             setLoading(false);
         }
     };
 
     const handleAddOrder = async () => {
-        if (!customerName || !totalAmount) {
+        if (!customerName || !productDescription || !quantity || !expectedDeliveryDate) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
 
-        const newOrder = {
-            orderNo: `ORD-${Math.floor(100 + Math.random() * 900)}`,
-            customerName,
-            totalAmount: Number(totalAmount),
-            status: 'Pending'
-        };
-
         try {
-            await api.post('/orders', newOrder);
-            fetchOrders();
+            await api.post('/orders', {
+                orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
+                customerName: customerName.trim(),
+                customerContact: customerContact.trim(),
+                productDescription: productDescription.trim(),
+                quantity: Number(quantity),
+                expectedDeliveryDate,
+                notes: '',
+            });
+            await fetchOrders();
             setModalVisible(false);
             resetForm();
             Alert.alert('Success', 'Customer order created successfully');
         } catch (e) {
-            // Mocking Add
-            setOrders([{ _id: Date.now().toString(), ...newOrder }, ...orders]);
-            setModalVisible(false);
-            resetForm();
+            Alert.alert('Unable to create order', getErrorMessage(e));
         }
     };
 
     const resetForm = () => {
         setCustomerName('');
-        setTotalAmount('');
+        setCustomerContact('');
+        setProductDescription('');
+        setQuantity('');
+        setExpectedDeliveryDate(getDefaultDeliveryDate());
     };
 
     const handleUpdateStatus = (id, currentStatus) => {
-        const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
-        const nextStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
+        const currentIndex = ORDER_STATUSES.indexOf(currentStatus);
+        const nextStatus = ORDER_STATUSES[(currentIndex + 1) % ORDER_STATUSES.length];
 
-        Alert.alert('Update Status', `Change order status to ${nextStatus}?`, [
+        Alert.alert('Update Status', `Change order status to ${formatStatusLabel(nextStatus)}?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Confirm',
                 style: 'default',
                 onPress: async () => {
                     try {
-                        await api.put(`/orders/${id}`, { status: nextStatus });
-                        fetchOrders();
+                        await api.patch(`/orders/${id}/status`, {
+                            status: nextStatus,
+                            note: 'Updated from mobile',
+                        });
+                        await fetchOrders();
                     } catch (e) {
-                        // Mocking Update
-                        setOrders(orders.map(o => (o._id === id ? { ...o, status: nextStatus } : o)));
+                        Alert.alert('Unable to update status', getErrorMessage(e));
                     }
                 },
             },
@@ -89,10 +113,13 @@ const OrdersScreen = () => {
 
     const getStatusStyle = (currentStatus) => {
         switch (currentStatus) {
-            case 'Processing': return { bg: '#DBEAFE', text: '#1D4ED8' }; // blue
-            case 'Shipped': return { bg: '#FEF3C7', text: '#D97706' }; // amber
-            case 'Delivered': return { bg: '#D1FAE5', text: '#059669' }; // emerald
-            default: return { bg: '#F3F4F6', text: '#6B7280' }; // gray
+            case 'in_production': return { bg: '#DBEAFE', text: '#1D4ED8' };
+            case 'cutting': return { bg: '#E0F2FE', text: '#0369A1' };
+            case 'washing': return { bg: '#F3E8FF', text: '#7C3AED' };
+            case 'qc': return { bg: '#FEF3C7', text: '#D97706' };
+            case 'packing': return { bg: '#FDE68A', text: '#92400E' };
+            case 'delivered': return { bg: '#D1FAE5', text: '#059669' };
+            default: return { bg: '#F3F4F6', text: '#6B7280' };
         }
     };
 
@@ -105,11 +132,16 @@ const OrdersScreen = () => {
                 delayLongPress={500}
             >
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.orderNo}>{item.orderNo}</Text>
-                    <Text style={styles.customerText}>{item.customerName} - ${item.totalAmount.toLocaleString()}</Text>
+                    <Text style={styles.orderNo}>{item.orderNumber}</Text>
+                    <Text style={styles.customerText}>
+                        {item.customerName} · {item.productDescription} x{item.quantity}
+                    </Text>
+                    <Text style={styles.deliveryText}>Due {formatDateLabel(item.expectedDeliveryDate)}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                    <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
+                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                        {formatStatusLabel(item.status)}
+                    </Text>
                 </View>
             </TouchableOpacity>
         );
@@ -127,6 +159,21 @@ const OrdersScreen = () => {
                     contentContainerStyle={styles.list}
                     refreshing={loading}
                     onRefresh={fetchOrders}
+                    ListHeaderComponent={(
+                        <View style={styles.headerCard}>
+                            <Text style={styles.headerTitle}>Customer Orders</Text>
+                            <Text style={styles.headerText}>
+                                Long press an order to move it to the next production stage.
+                            </Text>
+                            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                        </View>
+                    )}
+                    ListEmptyComponent={!loading ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>No customer orders yet</Text>
+                            <Text style={styles.emptyText}>Create an order to start tracking production progress.</Text>
+                        </View>
+                    ) : null}
                 />
             )}
 
@@ -153,10 +200,29 @@ const OrdersScreen = () => {
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="Total Amount ($)"
-                            value={totalAmount}
-                            onChangeText={setTotalAmount}
+                            placeholder="Customer Contact (optional)"
+                            value={customerContact}
+                            onChangeText={setCustomerContact}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Product Description"
+                            value={productDescription}
+                            onChangeText={setProductDescription}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Quantity"
+                            value={quantity}
+                            onChangeText={setQuantity}
                             keyboardType="numeric"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Expected Delivery Date (YYYY-MM-DD)"
+                            value={expectedDeliveryDate}
+                            onChangeText={setExpectedDeliveryDate}
+                            autoCapitalize="none"
                         />
 
                         <View style={styles.modalActions}>
@@ -178,11 +244,19 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F3F4F6' },
     list: { padding: 16 },
     itemCard: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+    headerCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12 },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+    headerText: { marginTop: 6, fontSize: 14, color: '#6B7280' },
+    errorText: { marginTop: 10, fontSize: 14, color: '#B91C1C' },
     orderNo: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
     customerText: { fontSize: 14, color: '#4B5563', marginTop: 4 },
+    deliveryText: { fontSize: 13, color: '#6B7280', marginTop: 6 },
     statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
     statusText: { fontWeight: 'bold', fontSize: 12 },
     fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: '#3B82F6', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
+    emptyState: { alignItems: 'center', paddingVertical: 48 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+    emptyText: { marginTop: 8, fontSize: 14, color: '#6B7280', textAlign: 'center' },
 
     // Modal Styles
     modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 16 },

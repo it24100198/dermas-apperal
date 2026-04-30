@@ -34,6 +34,34 @@ const mapEmployeeRoleToUserRole = (employeeRole) => {
   return ROLES.EMPLOYEE;
 };
 
+async function buildUserPayload(userDoc) {
+  const user = typeof userDoc?.toObject === 'function' ? userDoc.toObject() : { ...(userDoc || {}) };
+  delete user.password;
+
+  const employee = await Employee.findOne({ userId: user._id })
+    .populate('productionSectionId', 'name slug type')
+    .lean();
+
+  user.employeeProfile = employee
+    ? {
+        _id: employee._id,
+        employeeId: employee.employeeId || '',
+        role: employee.role || '',
+        phone: employee.phone || '',
+        productionSection: employee.productionSectionId
+          ? {
+              _id: employee.productionSectionId._id,
+              name: employee.productionSectionId.name || '',
+              slug: employee.productionSectionId.slug || '',
+              type: employee.productionSectionId.type || '',
+            }
+          : null,
+      }
+    : null;
+
+  return user;
+}
+
 export async function login(email, password) {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
@@ -53,15 +81,14 @@ export async function login(email, password) {
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
-  const u = user.toObject();
-  delete u.password;
-  return { user: u, token };
+  const hydratedUser = await buildUserPayload(user);
+  return { user: hydratedUser, token };
 }
 
 export async function getMe(userId) {
-  const user = await User.findById(userId).lean();
+  const user = await User.findById(userId);
   if (!user) throw new Error('User not found');
-  return user;
+  return buildUserPayload(user);
 }
 
 export async function createRegistrationRequest(payload) {
