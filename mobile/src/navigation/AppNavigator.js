@@ -11,9 +11,19 @@ import HomeScreen from '../screens/HomeScreen';
 import InventoryScreen from '../screens/InventoryScreen';
 import JobsScreen from '../screens/JobsScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
+import OrdersScreen from '../screens/OrdersScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const MoreStackNav = createNativeStackNavigator();
+const MoreStack = () => (
+    <MoreStackNav.Navigator screenOptions={{ headerShown: false }}>
+        <MoreStackNav.Screen name="Profile" component={ProfileScreen} />
+        <MoreStackNav.Screen name="Transactions" component={TransactionsScreen} options={{ headerShown: true, title: 'Financial Ledger' }} />
+    </MoreStackNav.Navigator>
+);
 
 const AppTabs = () => (
     <Tab.Navigator
@@ -27,12 +37,14 @@ const AppTabs = () => (
 
                 if (route.name === 'Dashboard') {
                     iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Inventory') {
-                    iconName = focused ? 'cube' : 'cube-outline';
+                } else if (route.name === 'Orders') {
+                    iconName = focused ? 'cart' : 'cart-outline';
                 } else if (route.name === 'Jobs') {
                     iconName = focused ? 'construct' : 'construct-outline';
-                } else if (route.name === 'Transactions') {
-                    iconName = focused ? 'cash' : 'cash-outline';
+                } else if (route.name === 'Inventory') {
+                    iconName = focused ? 'cube' : 'cube-outline';
+                } else if (route.name === 'Accounts') {
+                    iconName = focused ? 'person' : 'person-outline';
                 }
 
                 return <Ionicons name={iconName} size={size} color={color} />;
@@ -40,9 +52,10 @@ const AppTabs = () => (
         })}
     >
         <Tab.Screen name="Dashboard" component={HomeScreen} />
+        <Tab.Screen name="Orders" component={OrdersScreen} />
         <Tab.Screen name="Jobs" component={JobsScreen} />
         <Tab.Screen name="Inventory" component={InventoryScreen} />
-        <Tab.Screen name="Transactions" component={TransactionsScreen} />
+        <Tab.Screen name="Accounts" component={MoreStack} />
     </Tab.Navigator>
 );
 
