@@ -225,9 +225,8 @@ const styles = StyleSheet.create({
         borderRadius: radius.md,
         padding: 12,
         marginHorizontal: spacing.md,
-        gap: 8,
     },
-    infoText: { fontSize: 13, color: colors.primary, flex: 1 },
+    infoText: { fontSize: 13, color: colors.primary, flex: 1, marginLeft: 8 },
 });
 
 export default HomeScreen;

@@ -97,7 +97,6 @@ const AppTabs = () => (
             },
             tabBarActiveTintColor: colors.primary,
             tabBarInactiveTintColor: colors.textMuted,
-            tabBarHideOnKeyboard: true,
             tabBarIcon: ({ focused, color, size }) => {
                 const icons = {
                     Dashboard: focused ? 'home' : 'home-outline',

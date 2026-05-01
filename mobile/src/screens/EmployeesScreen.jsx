@@ -89,7 +89,7 @@ const EmployeesScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
     list: { padding: spacing.md },
-    summary: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryLight, borderRadius: radius.sm, padding: 12, marginBottom: 10, gap: 8 },
+    summary: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryLight, borderRadius: radius.sm, padding: 12, marginBottom: 10 },
     summaryText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
     card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: 10, ...shadow.sm },
     avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginRight: 12 },

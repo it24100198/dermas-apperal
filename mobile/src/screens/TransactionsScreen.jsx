@@ -168,7 +168,7 @@ const TransactionsScreen = () => {
                             <TextInput style={styles.input} placeholder="Vendor Name (optional)" value={vendorName} onChangeText={setVendorName} />
 
                             <Text style={styles.modalLabel}>Payment Method</Text>
-                            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                            <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                                 {PAYMENT_METHODS.map(m => (
                                     <TouchableOpacity key={m} style={[styles.chip, paymentMethod === m && styles.chipActive]} onPress={() => setPaymentMethod(m)}>
                                         <Text style={[styles.chipText, paymentMethod === m && styles.chipTextActive]}>{formatStatusLabel(m)}</Text>

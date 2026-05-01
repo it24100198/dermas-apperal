@@ -2,7 +2,6 @@ import React, { useState, useContext } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
-    StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
@@ -62,7 +61,7 @@ const LoginScreen = ({ navigation }) => {
 
                     {error ? (
                         <View style={styles.errorBox}>
-                            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+                            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} style={{ marginRight: 8 }} />
                             <Text style={styles.errorText}>{error}</Text>
                         </View>
                     ) : null}
@@ -179,7 +178,6 @@ const styles = StyleSheet.create({
         borderRadius: radius.sm,
         padding: 12,
         marginBottom: 14,
-        gap: 8,
     },
     errorText: { color: '#B91C1C', fontSize: 14, flex: 1 },
     inputWrapper: {

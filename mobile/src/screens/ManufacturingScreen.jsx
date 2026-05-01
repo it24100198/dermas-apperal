@@ -226,7 +226,7 @@ const ManufacturingScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
     tabs: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, maxHeight: 52 },
-    tabsContent: { paddingHorizontal: spacing.md, paddingVertical: 10, gap: 8 },
+    tabsContent: { paddingHorizontal: spacing.md, paddingVertical: 10 },
     tab: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: radius.full, backgroundColor: colors.bg },
     tabActive: { backgroundColor: colors.primary },
     tabText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },

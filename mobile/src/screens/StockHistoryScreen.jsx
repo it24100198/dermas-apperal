@@ -66,7 +66,7 @@ const StockHistoryScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
     list: { padding: spacing.md },
-    infoCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryLight, borderRadius: radius.sm, padding: 12, marginBottom: 10, gap: 8 },
+    infoCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryLight, borderRadius: radius.sm, padding: 12, marginBottom: 10 },
     infoText: { fontSize: 13, color: colors.primary, flex: 1 },
     card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: 10, ...shadow.sm },
     dot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },

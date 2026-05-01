@@ -98,11 +98,7 @@ const styles = StyleSheet.create({
     notifTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
     notifBody: { fontSize: 14, color: colors.textSecondary, marginTop: 4, lineHeight: 20 },
     notifDate: { fontSize: 12, color: colors.textMuted, marginTop: 6 },
-    errorBox: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.dangerLight, borderRadius: radius.sm,
-        padding: 12, marginBottom: 12, gap: 8,
-    },
+    errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.dangerLight, borderRadius: radius.sm, padding: 12, marginBottom: 12 },
     errorText: { color: '#B91C1C', fontSize: 14, flex: 1 },
     emptyState: { alignItems: 'center', paddingVertical: 64 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 16 },

@@ -96,7 +96,7 @@ const StockAdjustmentsScreen = () => {
                                 ))}
                             </ScrollView>
                             <Text style={styles.modalLabel}>Adjustment Type</Text>
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 }}>
                                 {TYPES.map(t => (
                                     <TouchableOpacity key={t} style={[styles.chip, type === t && styles.chipActive]} onPress={() => setType(t)}>
                                         <Text style={[styles.chipText, type === t && styles.chipTextActive]}>{formatStatusLabel(t)}</Text>

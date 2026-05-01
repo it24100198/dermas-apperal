@@ -100,7 +100,7 @@ const ProfileScreen = () => {
 
             {/* Logout */}
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-                <Ionicons name="log-out-outline" size={20} color="#FFF" />
+                <Ionicons name="log-out-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
                 <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>
         </ScrollView>
@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
         marginTop: spacing.lg,
     },
     logoutText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
