@@ -57,9 +57,10 @@ router.post('/reset-password', resetPasswordRateLimit, validate(resetPasswordSch
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.me);
 router.post('/bootstrap-admin', (req, res, next) => {
-	if (process.env.NODE_ENV === 'production') {
-		return res.status(404).json({ error: 'Not found' });
-	}
+	// Temporarily remove this block:
+	//if (process.env.NODE_ENV === 'production') {
+	//	return res.status(404).json({ error: 'Not found' });
+	//}
 	return authController.bootstrapAdmin(req, res, next);
 });
 
