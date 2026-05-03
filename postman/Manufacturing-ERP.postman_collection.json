@@ -10,7 +10,7 @@
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@demo.com\",\n  \"password\": \"admin123\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@dermas.local\",\n  \"password\": \"Admin@2026\"\n}" },
             "url": "{{baseUrl}}/auth/login"
           }
         },
