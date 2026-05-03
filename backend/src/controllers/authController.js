@@ -128,7 +128,7 @@ export async function logout(req, res) {
 export async function bootstrapAdmin(req, res) {
   try {
     const email = 'admin@dermas.local';
-    const password = 'admin123';  // Temporarily change to simple password
+    const password = 'Admin@2026';  // Temporarily change to simple password
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.findOneAndUpdate(
